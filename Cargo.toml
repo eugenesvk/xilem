@@ -4,6 +4,7 @@ members = [
     "xilem",
     "xilem_core",
     "masonry",
+    "xilem_colors",
 
     "xilem_web",
     "xilem_web/web_examples/counter",
@@ -102,6 +103,7 @@ clippy.unseparated_literal_suffix = "warn"
 # clippy.print_stderr = "warn"
 
 [workspace.dependencies]
+xilem_colors = "0.1.0"
 xilem_web_core = { version = "0.1.0", path = "xilem_web/xilem_web_core" }
 masonry = { version = "0.2.0", path = "masonry" }
 xilem_core = { version = "0.1.0", path = "xilem_core" }
