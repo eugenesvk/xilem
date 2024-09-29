@@ -74,6 +74,12 @@ pub struct EventCtx<'a> {
     pub(crate) is_handled: bool,
 }
 
+impl<'a> EventCtx<'a> {
+    pub fn get_colortokens(&self) -> ColorTokens {
+        self.global_state.colors.tokens
+    }
+}
+
 /// A context provided to the [`Widget::register_children`] method on widgets.
 pub struct RegisterCtx<'a> {
     pub(crate) widget_state_children: ArenaMutChildren<'a, WidgetState>,

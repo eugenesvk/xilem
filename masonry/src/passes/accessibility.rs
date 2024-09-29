@@ -97,7 +97,7 @@ fn build_access_node(widget: &mut dyn Widget, ctx: &mut AccessCtx) -> Node {
             .collect::<Vec<NodeId>>(),
     );
 
-    if state.hovered {
+    if ctx.hovered() {
         node.set_hovered();
     }
     if ctx.is_disabled() {
