@@ -1,7 +1,7 @@
 // Copyright 2018 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use accesskit::Role;
+use accesskit::{NodeBuilder, Role};
 use parley::{
     layout::Alignment,
     style::{FontFamily, FontStack},
@@ -15,12 +15,11 @@ use vello::{
 };
 use winit::event::Ime;
 
+use crate::text::{TextBrush, TextEditor, TextWithSelection};
 use crate::widget::{LineBreaking, WidgetMut};
 use crate::{
-    dpi::{LogicalPosition, LogicalSize},
-    text::{TextBrush, TextEditor, TextStorage, TextWithSelection},
     AccessCtx, AccessEvent, BoxConstraints, CursorIcon, EventCtx, LayoutCtx, LifeCycle,
-    LifeCycleCtx, PaintCtx, PointerEvent, StatusChange, TextEvent, Widget, WidgetId,
+    LifeCycleCtx, PaintCtx, PointerEvent, RegisterCtx, StatusChange, TextEvent, Widget, WidgetId,
 };
 
 const TEXTBOX_PADDING: f64 = 3.0;
@@ -45,7 +44,7 @@ pub struct Textbox {
     // We might change this to a rope based structure at some point.
     // If you need a text box which uses a different text type, you should
     // create a custom widget
-    editor: TextEditor<String>,
+    editor: TextEditor,
     line_break_mode: LineBreaking,
     show_disabled: bool,
     brush: TextBrush,
@@ -226,17 +225,17 @@ impl Widget for Textbox {
         // TODO - Handle accesskit::Action::SetValue
     }
 
+    fn register_children(&mut self, _ctx: &mut RegisterCtx) {}
+
     #[allow(missing_docs)]
     fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange) {
         match event {
             StatusChange::FocusChanged(false) => {
                 self.editor.focus_lost();
                 ctx.request_layout();
-                // TODO: Stop focusing on any links
             }
             StatusChange::FocusChanged(true) => {
                 self.editor.focus_gained();
-                // TODO: Focus on first link
                 ctx.request_layout();
             }
             _ => {}
@@ -245,6 +244,9 @@ impl Widget for Textbox {
 
     fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle) {
         match event {
+            LifeCycle::WidgetAdded => {
+                ctx.register_as_text_input();
+            }
             LifeCycle::DisabledChanged(disabled) => {
                 if self.show_disabled {
                     if *disabled {
@@ -258,10 +260,6 @@ impl Widget for Textbox {
             }
             LifeCycle::BuildFocusChain => {
                 ctx.register_for_focus();
-                // TODO: This will always be empty
-                if !self.editor.text().links().is_empty() {
-                    tracing::warn!("Links present in text, but not yet integrated");
-                }
             }
             _ => {}
         }
@@ -332,19 +330,6 @@ impl Widget for Textbox {
             None,
             &outline_rect,
         );
-        let origin = ctx.widget_state.window_origin();
-        if ctx.widget_state.has_focus {
-            ctx.signal(crate::render_root::RenderRootSignal::ImeMoved(
-                LogicalPosition {
-                    x: origin.x,
-                    y: origin.y + size.height,
-                },
-                LogicalSize {
-                    width: size.width,
-                    height: size.height,
-                },
-            ));
-        }
     }
 
     fn get_cursor(&self) -> CursorIcon {
@@ -355,9 +340,9 @@ impl Widget for Textbox {
         Role::TextInput
     }
 
-    fn accessibility(&mut self, ctx: &mut AccessCtx) {
+    fn accessibility(&mut self, _ctx: &mut AccessCtx, node: &mut NodeBuilder) {
         // TODO: Replace with full accessibility.
-        ctx.current_node().set_value(self.text());
+        node.set_value(self.text());
     }
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
@@ -369,6 +354,6 @@ impl Widget for Textbox {
     }
 
     fn get_debug_text(&self) -> Option<String> {
-        Some(self.editor.text().as_str().chars().take(100).collect())
+        Some(self.editor.text().chars().take(100).collect())
     }
 }

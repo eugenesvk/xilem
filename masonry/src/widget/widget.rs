@@ -6,7 +6,7 @@ use std::num::NonZeroU64;
 use std::ops::{Deref, DerefMut};
 use std::sync::atomic::{AtomicU64, Ordering};
 
-use accesskit::Role;
+use accesskit::{NodeBuilder, Role};
 use cursor_icon::CursorIcon;
 use smallvec::SmallVec;
 use tracing::{trace_span, Span};
@@ -14,8 +14,10 @@ use vello::Scene;
 
 use crate::contexts::ComposeCtx;
 use crate::event::{AccessEvent, PointerEvent, StatusChange, TextEvent};
+use crate::widget::WidgetRef;
 use crate::{
-    AccessCtx, AsAny, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx, Size,
+    AccessCtx, AsAny, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
+    Point, QueryCtx, RegisterCtx, Size,
 };
 
 /// A unique identifier for a single [`Widget`].
@@ -79,12 +81,20 @@ pub trait Widget: AsAny {
     #[allow(missing_docs)]
     fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange);
 
+    /// Register child widgets with Masonry.
+    ///
+    /// Leaf widgets can implement this with an empty body.
+    ///
+    /// Container widgets need to call [`RegisterCtx::register_child`] for all
+    /// their children. Forgetting to do so is a logic error and may lead to crashes.
+    fn register_children(&mut self, ctx: &mut RegisterCtx);
+
     /// Handle a lifecycle notification.
     ///
     /// This method is called to notify your widget of certain special events,
     /// (available in the [`LifeCycle`] enum) that are generally related to
     /// changes in the widget graph or in the state of your specific widget.
-    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle);
+    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle) {}
 
     /// Compute layout.
     ///
@@ -119,7 +129,7 @@ pub trait Widget: AsAny {
 
     fn accessibility_role(&self) -> Role;
 
-    fn accessibility(&mut self, ctx: &mut AccessCtx);
+    fn accessibility(&mut self, ctx: &mut AccessCtx, node: &mut NodeBuilder);
 
     /// Return references to this widget's children.
     ///
@@ -140,6 +150,9 @@ pub trait Widget: AsAny {
         false
     }
 
+    // TODO - Write a generic default implementation once
+    // `const std::any::type_name` is stable.
+    // See https://github.com/rust-lang/rust/issues/63084
     /// Return a span for tracing.
     ///
     /// As methods recurse through the widget tree, trace spans are added for each child
@@ -167,20 +180,48 @@ pub trait Widget: AsAny {
 
     // --- Auto-generated implementations ---
 
-    // FIXME
-    #[cfg(FALSE)]
-    /// Return which child, if any, has the given `pos` in its layout rect.
+    /// Return which child, if any, has the given `pos` in its layout rect. In case of overlapping
+    /// children, the last child as determined by [`Widget::children_ids`] is chosen. No child is
+    /// returned if `pos` is outside the widget's clip path.
     ///
-    /// The child return is a direct child, not eg a grand-child. The position is in
-    /// relative coordinates. (Eg `(0,0)` is the top-left corner of `self`).
+    /// The child returned is a direct child, not e.g. a grand-child.
     ///
-    /// Has a default implementation, that can be overridden to search children more
-    /// efficiently.
-    fn get_child_at_pos(&self, pos: Point) -> Option<WidgetRef<'_, dyn Widget>> {
-        // layout_rect() is in parent coordinate space
-        self.children()
-            .into_iter()
-            .find(|child| child.state().layout_rect().contains(pos))
+    /// Has a default implementation that can be overridden to search children more efficiently.
+    /// Custom implementations must uphold the conditions outlined above.
+    ///
+    /// **pos** - the position in global coordinates (e.g. `(0,0)` is the top-left corner of the
+    /// window).
+    fn get_child_at_pos<'c>(
+        &self,
+        ctx: QueryCtx<'c>,
+        pos: Point,
+    ) -> Option<WidgetRef<'c, dyn Widget>> {
+        let relative_pos = pos - ctx.widget_state.window_origin().to_vec2();
+        if !ctx
+            .widget_state
+            .clip
+            .map_or(true, |clip| clip.contains(relative_pos))
+        {
+            return None;
+        }
+
+        // Assumes `Self::children_ids` is in increasing "z-order", picking the last child in case
+        // of overlapping children.
+        for child_id in self.children_ids().iter().rev() {
+            let child = ctx.get(*child_id);
+
+            let relative_pos = pos - child.state().window_origin().to_vec2();
+            // The position must be inside the child's layout and inside the child's clip path (if
+            // any).
+            if !child.state().is_stashed
+                && !child.widget.skip_pointer()
+                && child.state().window_layout_rect().contains(pos)
+            {
+                return Some(child);
+            }
+        }
+
+        None
     }
 
     /// Get the (verbose) type name of the widget for debugging purposes.
@@ -300,6 +341,10 @@ impl Widget for Box<dyn Widget> {
         self.deref_mut().on_access_event(ctx, event);
     }
 
+    fn register_children(&mut self, ctx: &mut RegisterCtx) {
+        self.deref_mut().register_children(ctx);
+    }
+
     fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange) {
         self.deref_mut().on_status_change(ctx, event);
     }
@@ -324,8 +369,8 @@ impl Widget for Box<dyn Widget> {
         self.deref().accessibility_role()
     }
 
-    fn accessibility(&mut self, ctx: &mut AccessCtx) {
-        self.deref_mut().accessibility(ctx);
+    fn accessibility(&mut self, ctx: &mut AccessCtx, node: &mut NodeBuilder) {
+        self.deref_mut().accessibility(ctx, node);
     }
 
     fn type_name(&self) -> &'static str {
@@ -354,6 +399,14 @@ impl Widget for Box<dyn Widget> {
 
     fn get_cursor(&self) -> CursorIcon {
         self.deref().get_cursor()
+    }
+
+    fn get_child_at_pos<'c>(
+        &self,
+        ctx: QueryCtx<'c>,
+        pos: Point,
+    ) -> Option<WidgetRef<'c, dyn Widget>> {
+        self.deref().get_child_at_pos(ctx, pos)
     }
 
     fn as_any(&self) -> &dyn Any {

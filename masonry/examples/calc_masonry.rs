@@ -9,13 +9,13 @@
 
 use std::borrow::BorrowMut;
 
-use accesskit::{DefaultActionVerb, Role};
+use accesskit::{DefaultActionVerb, NodeBuilder, Role};
 use masonry::app_driver::{AppDriver, DriverCtx};
 use masonry::dpi::LogicalSize;
 use masonry::widget::{Align, CrossAxisAlignment, Flex, Label, RootWidget, SizedBox};
 use masonry::{
-    AccessCtx, AccessEvent, Action, BoxConstraints, Color, EventCtx, LayoutCtx, LifeCycle,
-    LifeCycleCtx, PaintCtx, Point, PointerEvent, Size, StatusChange, TextEvent, Widget, WidgetId,
+    AccessCtx, AccessEvent, Action, BoxConstraints, Color, EventCtx, LayoutCtx, LifeCycleCtx,
+    PaintCtx, Point, PointerEvent, RegisterCtx, Size, StatusChange, TextEvent, Widget, WidgetId,
     WidgetPod,
 };
 use smallvec::{smallvec, SmallVec};
@@ -225,8 +225,8 @@ impl Widget for CalcButton {
         }
     }
 
-    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle) {
-        self.inner.lifecycle(ctx, event);
+    fn register_children(&mut self, ctx: &mut RegisterCtx) {
+        ctx.register_child(&mut self.inner);
     }
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
@@ -259,15 +259,14 @@ impl Widget for CalcButton {
         Role::Button
     }
 
-    fn accessibility(&mut self, ctx: &mut AccessCtx) {
+    fn accessibility(&mut self, _ctx: &mut AccessCtx, node: &mut NodeBuilder) {
         let _name = match self.action {
             CalcAction::Digit(digit) => digit.to_string(),
             CalcAction::Op(op) => op.to_string(),
         };
         // We may want to add a name if it doesn't interfere with the child label
         // ctx.current_node().set_name(name);
-        ctx.current_node()
-            .set_default_action_verb(DefaultActionVerb::Click);
+        node.set_default_action_verb(DefaultActionVerb::Click);
     }
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {

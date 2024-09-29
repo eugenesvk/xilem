@@ -1,7 +1,7 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use accesskit::Role;
+use accesskit::{NodeBuilder, Role};
 use smallvec::SmallVec;
 use tracing::{trace_span, Span};
 use vello::kurbo::{Affine, Line, Stroke};
@@ -10,8 +10,8 @@ use vello::Scene;
 use crate::theme::get_debug_color;
 use crate::widget::WidgetMut;
 use crate::{
-    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
-    Point, PointerEvent, Size, StatusChange, TextEvent, Widget, WidgetId, WidgetPod,
+    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, LifeCycleCtx, PaintCtx, Point,
+    PointerEvent, Size, StatusChange, TextEvent, Widget, WidgetId, WidgetPod,
 };
 
 pub struct Grid {
@@ -240,14 +240,13 @@ impl Widget for Grid {
 
     fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, _event: &StatusChange) {}
 
-    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle) {
+    fn register_children(&mut self, ctx: &mut crate::RegisterCtx) {
         for child in self.children.iter_mut().filter_map(|x| x.widget_mut()) {
-            child.lifecycle(ctx, event);
+            ctx.register_child(child);
         }
     }
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
-        bc.debug_check("Grid");
         let total_size = bc.max();
         let width_unit = (total_size.width + self.grid_spacing) / (self.grid_width as f64);
         let height_unit = (total_size.height + self.grid_spacing) / (self.grid_height as f64);
@@ -282,7 +281,7 @@ impl Widget for Grid {
         Role::GenericContainer
     }
 
-    fn accessibility(&mut self, _: &mut AccessCtx) {}
+    fn accessibility(&mut self, _ctx: &mut AccessCtx, _node: &mut NodeBuilder) {}
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
         self.children

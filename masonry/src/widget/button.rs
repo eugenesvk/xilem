@@ -3,7 +3,7 @@
 
 //! A button widget.
 
-use accesskit::{DefaultActionVerb, Role};
+use accesskit::{DefaultActionVerb, NodeBuilder, Role};
 use smallvec::{smallvec, SmallVec};
 use tracing::{trace, trace_span, Span};
 use vello::Scene;
@@ -11,10 +11,10 @@ use vello::Scene;
 use crate::action::Action;
 use crate::event::PointerButton;
 use crate::paint_scene_helpers::{fill_lin_gradient, stroke, UnitPoint};
-use crate::text::TextStorage;
 use crate::widget::{Label, WidgetMut, WidgetPod};
+
 use crate::{
-    theme, AccessCtx, AccessEvent, ArcStr, BoxConstraints, EventCtx, Insets, LayoutCtx, LifeCycle,
+    theme, AccessCtx, AccessEvent, ArcStr, BoxConstraints, EventCtx, Insets, LayoutCtx,
     LifeCycleCtx, PaintCtx, PointerEvent, Size, StatusChange, TextEvent, Widget, WidgetId,
 };
 
@@ -115,8 +115,8 @@ impl Widget for Button {
         ctx.request_paint();
     }
 
-    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle) {
-        self.label.lifecycle(ctx, event);
+    fn register_children(&mut self, ctx: &mut crate::RegisterCtx) {
+        ctx.register_child(&mut self.label);
     }
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
@@ -195,17 +195,16 @@ impl Widget for Button {
         Role::Button
     }
 
-    fn accessibility(&mut self, ctx: &mut AccessCtx) {
+    fn accessibility(&mut self, ctx: &mut AccessCtx, node: &mut NodeBuilder) {
         // IMPORTANT: We don't want to merge this code in practice, because
         // the child label already has a 'name' property.
         // This is more of a proof of concept of `get_raw_ref()`.
         if false {
             let label = ctx.get_raw_ref(&self.label);
-            let name = label.widget().text().as_str().to_string();
-            ctx.current_node().set_name(name);
+            let name = label.widget().text().as_ref().to_string();
+            node.set_name(name);
         }
-        ctx.current_node()
-            .set_default_action_verb(DefaultActionVerb::Click);
+        node.set_default_action_verb(DefaultActionVerb::Click);
     }
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
@@ -219,7 +218,7 @@ impl Widget for Button {
     // FIXME
     #[cfg(FALSE)]
     fn get_debug_text(&self) -> Option<String> {
-        Some(self.label.as_ref().text().as_str().to_string())
+        Some(self.label.as_ref().text().as_ref().to_string())
     }
 }
 

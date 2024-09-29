@@ -4,7 +4,7 @@
 //! An Image widget.
 //! Please consider using SVG and the SVG widget as it scales much better.
 
-use accesskit::Role;
+use accesskit::{NodeBuilder, Role};
 use smallvec::SmallVec;
 use tracing::{trace, trace_span, Span};
 use vello::kurbo::Affine;
@@ -14,7 +14,7 @@ use vello::Scene;
 use crate::widget::{FillStrat, WidgetMut};
 use crate::{
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
-    PointerEvent, Size, StatusChange, TextEvent, Widget, WidgetId,
+    PointerEvent, RegisterCtx, Size, StatusChange, TextEvent, Widget, WidgetId,
 };
 
 // TODO - Resolve name collision between masonry::Image and peniko::Image
@@ -77,6 +77,8 @@ impl Widget for Image {
 
     fn on_access_event(&mut self, _ctx: &mut EventCtx, _event: &AccessEvent) {}
 
+    fn register_children(&mut self, _ctx: &mut RegisterCtx) {}
+
     fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, _event: &StatusChange) {}
 
     fn lifecycle(&mut self, _ctx: &mut LifeCycleCtx, _event: &LifeCycle) {}
@@ -113,7 +115,7 @@ impl Widget for Image {
         Role::Image
     }
 
-    fn accessibility(&mut self, _ctx: &mut AccessCtx) {
+    fn accessibility(&mut self, _ctx: &mut AccessCtx, _node: &mut NodeBuilder) {
         // TODO - Handle alt text and such.
     }
 

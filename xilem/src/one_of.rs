@@ -3,10 +3,10 @@
 
 //! Statically typed alternatives to the type-erased [`AnyView`](`crate::AnyView`).
 
-use accesskit::Role;
+use accesskit::{NodeBuilder, Role};
 use masonry::{
-    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
-    Point, PointerEvent, Size, StatusChange, TextEvent, Widget, WidgetId, WidgetPod,
+    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, LifeCycleCtx, PaintCtx, Point,
+    PointerEvent, RegisterCtx, Size, StatusChange, TextEvent, Widget, WidgetId, WidgetPod,
 };
 use smallvec::{smallvec, SmallVec};
 use vello::Scene;
@@ -120,6 +120,7 @@ impl<
         }
     }
     fn upcast_one_of_element(
+        &mut self,
         elem: xilem_core::one_of::OneOf<
             Pod<A>,
             Pod<B>,
@@ -133,15 +134,15 @@ impl<
         >,
     ) -> Self::OneOfElement {
         match elem {
-            xilem_core::one_of::OneOf::A(w) => Pod::new(OneOfWidget::A(w.inner)),
-            xilem_core::one_of::OneOf::B(w) => Pod::new(OneOfWidget::B(w.inner)),
-            xilem_core::one_of::OneOf::C(w) => Pod::new(OneOfWidget::C(w.inner)),
-            xilem_core::one_of::OneOf::D(w) => Pod::new(OneOfWidget::D(w.inner)),
-            xilem_core::one_of::OneOf::E(w) => Pod::new(OneOfWidget::E(w.inner)),
-            xilem_core::one_of::OneOf::F(w) => Pod::new(OneOfWidget::F(w.inner)),
-            xilem_core::one_of::OneOf::G(w) => Pod::new(OneOfWidget::G(w.inner)),
-            xilem_core::one_of::OneOf::H(w) => Pod::new(OneOfWidget::H(w.inner)),
-            xilem_core::one_of::OneOf::I(w) => Pod::new(OneOfWidget::I(w.inner)),
+            xilem_core::one_of::OneOf::A(w) => self.new_pod(OneOfWidget::A(w.inner)),
+            xilem_core::one_of::OneOf::B(w) => self.new_pod(OneOfWidget::B(w.inner)),
+            xilem_core::one_of::OneOf::C(w) => self.new_pod(OneOfWidget::C(w.inner)),
+            xilem_core::one_of::OneOf::D(w) => self.new_pod(OneOfWidget::D(w.inner)),
+            xilem_core::one_of::OneOf::E(w) => self.new_pod(OneOfWidget::E(w.inner)),
+            xilem_core::one_of::OneOf::F(w) => self.new_pod(OneOfWidget::F(w.inner)),
+            xilem_core::one_of::OneOf::G(w) => self.new_pod(OneOfWidget::G(w.inner)),
+            xilem_core::one_of::OneOf::H(w) => self.new_pod(OneOfWidget::H(w.inner)),
+            xilem_core::one_of::OneOf::I(w) => self.new_pod(OneOfWidget::I(w.inner)),
         }
     }
 
@@ -224,17 +225,17 @@ impl<
         // Intentionally do nothing
     }
 
-    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle) {
+    fn register_children(&mut self, ctx: &mut RegisterCtx) {
         match self {
-            OneOfWidget::A(w) => w.lifecycle(ctx, event),
-            OneOfWidget::B(w) => w.lifecycle(ctx, event),
-            OneOfWidget::C(w) => w.lifecycle(ctx, event),
-            OneOfWidget::D(w) => w.lifecycle(ctx, event),
-            OneOfWidget::E(w) => w.lifecycle(ctx, event),
-            OneOfWidget::F(w) => w.lifecycle(ctx, event),
-            OneOfWidget::G(w) => w.lifecycle(ctx, event),
-            OneOfWidget::H(w) => w.lifecycle(ctx, event),
-            OneOfWidget::I(w) => w.lifecycle(ctx, event),
+            OneOfWidget::A(w) => ctx.register_child(w),
+            OneOfWidget::B(w) => ctx.register_child(w),
+            OneOfWidget::C(w) => ctx.register_child(w),
+            OneOfWidget::D(w) => ctx.register_child(w),
+            OneOfWidget::E(w) => ctx.register_child(w),
+            OneOfWidget::F(w) => ctx.register_child(w),
+            OneOfWidget::G(w) => ctx.register_child(w),
+            OneOfWidget::H(w) => ctx.register_child(w),
+            OneOfWidget::I(w) => ctx.register_child(w),
         }
     }
 
@@ -294,7 +295,7 @@ impl<
         Role::GenericContainer
     }
 
-    fn accessibility(&mut self, _ctx: &mut AccessCtx) {}
+    fn accessibility(&mut self, _ctx: &mut AccessCtx, _node: &mut NodeBuilder) {}
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
         match self {

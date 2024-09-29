@@ -129,6 +129,11 @@ pub(crate) fn root_on_pointer_event(
     handled
 }
 
+// TODO https://github.com/linebender/xilem/issues/376 - Some implicit invariants:
+// - If a Widget gets a keyboard event or an ImeStateChange, then
+// focus is on it, its child or its parent.
+// - If a Widget has focus, then none of its parents is hidden
+
 pub(crate) fn root_on_text_event(
     root: &mut RenderRoot,
     root_state: &mut WidgetState,
@@ -195,6 +200,26 @@ pub(crate) fn root_on_access_event(
         event,
         false,
         |widget, ctx, event| {
+            // TODO - Split into "access_event_focus" pass or something similar.
+            if event.target == ctx.widget_id() {
+                match event.action {
+                    accesskit::Action::Focus => {
+                        if ctx.is_in_focus_chain() && !ctx.is_disabled() && !ctx.is_focused() {
+                            ctx.request_focus();
+                            ctx.set_handled();
+                            return;
+                        }
+                    }
+                    accesskit::Action::Blur => {
+                        if ctx.is_focused() {
+                            ctx.resign_focus();
+                            ctx.set_handled();
+                            return;
+                        }
+                    }
+                    _ => {}
+                }
+            }
             widget.on_access_event(ctx, event);
         },
     );

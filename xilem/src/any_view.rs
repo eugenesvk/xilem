@@ -1,11 +1,11 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use accesskit::Role;
+use accesskit::{NodeBuilder, Role};
 use masonry::widget::WidgetMut;
 use masonry::{
-    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx, PaintCtx,
-    Point, PointerEvent, Size, StatusChange, TextEvent, Widget, WidgetId, WidgetPod,
+    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, LifeCycleCtx, PaintCtx, Point,
+    PointerEvent, RegisterCtx, Size, StatusChange, TextEvent, Widget, WidgetId, WidgetPod,
 };
 use smallvec::{smallvec, SmallVec};
 use tracing::{trace_span, Span};
@@ -25,12 +25,12 @@ use crate::{Pod, ViewCtx};
 pub type AnyWidgetView<State, Action = ()> =
     dyn AnyView<State, Action, ViewCtx, Pod<DynWidget>> + Send + Sync;
 
-impl<W: Widget> SuperElement<Pod<W>> for Pod<DynWidget> {
-    fn upcast(child: Pod<W>) -> Self {
-        WidgetPod::new(DynWidget {
-            inner: child.inner.boxed(),
+impl<W: Widget> SuperElement<Pod<W>, ViewCtx> for Pod<DynWidget> {
+    fn upcast(ctx: &mut ViewCtx, child: Pod<W>) -> Self {
+        let boxed_pod = ctx.boxed_pod(child);
+        ctx.new_pod(DynWidget {
+            inner: boxed_pod.inner.boxed(),
         })
-        .into()
     }
 
     fn with_downcast_val<R>(
@@ -47,7 +47,7 @@ impl<W: Widget> SuperElement<Pod<W>> for Pod<DynWidget> {
     }
 }
 
-impl<W: Widget> AnyElement<Pod<W>> for Pod<DynWidget> {
+impl<W: Widget> AnyElement<Pod<W>, ViewCtx> for Pod<DynWidget> {
     fn replace_inner(mut this: Self::Mut<'_>, child: Pod<W>) -> Self::Mut<'_> {
         DynWidget::replace_inner(&mut this, child.inner.boxed());
         this
@@ -82,8 +82,8 @@ impl Widget for DynWidget {
         // Intentionally do nothing
     }
 
-    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle) {
-        self.inner.lifecycle(ctx, event);
+    fn register_children(&mut self, ctx: &mut RegisterCtx) {
+        ctx.register_child(&mut self.inner);
     }
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
@@ -98,7 +98,7 @@ impl Widget for DynWidget {
         Role::GenericContainer
     }
 
-    fn accessibility(&mut self, _ctx: &mut AccessCtx) {}
+    fn accessibility(&mut self, _ctx: &mut AccessCtx, _node: &mut NodeBuilder) {}
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
         smallvec![self.inner.id()]

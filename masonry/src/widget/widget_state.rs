@@ -7,7 +7,6 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use vello::kurbo::{Insets, Point, Rect, Size, Vec2};
 use xilem_colors::Colorix;
 
-use crate::text_helpers::TextFieldRegistration;
 use crate::{CursorIcon, WidgetId};
 
 // TODO - Sort out names of widget state flags in two categories:
@@ -65,8 +64,15 @@ pub struct WidgetState {
     /// the baseline. Widgets that contain text or controls that expect to be
     /// laid out alongside text can set this as appropriate.
     pub(crate) baseline_offset: f64,
-    // TODO - Document
+    // TODO - Remove
     pub(crate) is_portal: bool,
+
+    /// Tracks whether widget is eligible for IME events.
+    /// Should be immutable after `WidgetAdded` event.
+    pub(crate) is_text_input: bool,
+    /// The area of the widget that is being edited by
+    /// an IME, in local coordinates.
+    pub(crate) ime_area: Option<Rect>,
 
     // TODO - Use general Shape
     // Currently Kurbo doesn't really provide a type that lets us
@@ -114,8 +120,10 @@ pub struct WidgetState {
     /// An animation must run on this widget or a descendant
     pub(crate) needs_anim: bool,
 
-    /// This widget or a descendant changed its `explicitly_disabled` value
+    /// This widget or a descendant changed its `is_explicitly_disabled` value
     pub(crate) needs_update_disabled: bool,
+    /// This widget or a descendant changed its `is_explicitly_stashed` value
+    pub(crate) needs_update_stashed: bool,
 
     pub(crate) update_focus_chain: bool,
 
@@ -126,13 +134,17 @@ pub struct WidgetState {
     // TODO - Remove and handle in WidgetRoot instead
     pub(crate) cursor: Option<CursorIcon>,
 
-    pub(crate) text_registrations: Vec<TextFieldRegistration>,
-
     // --- STATUS ---
     /// This widget has been disabled.
     pub(crate) is_explicitly_disabled: bool,
     /// This widget or an ancestor has been disabled.
     pub(crate) is_disabled: bool,
+
+    // TODO - Document concept of "stashing".
+    /// This widget has been stashed.
+    pub(crate) is_explicitly_stashed: bool,
+    /// This widget or an ancestor has been stashed.
+    pub(crate) is_stashed: bool,
 
     pub(crate) hovered: bool,
 
@@ -140,8 +152,8 @@ pub struct WidgetState {
     /// Descendants of the focused widget are not in the focused path.
     pub(crate) has_focus: bool,
 
-    // TODO - document
-    pub(crate) is_stashed: bool,
+    /// Whether this specific widget is in the focus chain.
+    pub(crate) in_focus_chain: bool,
 
     // --- DEBUG INFO ---
     // Used in event/lifecycle/etc methods that are expected to be called recursively
@@ -170,11 +182,15 @@ impl WidgetState {
             paint_insets: Insets::ZERO,
             local_paint_rect: Rect::ZERO,
             is_portal: false,
+            is_text_input: false,
+            ime_area: None,
             clip: Default::default(),
             translation: Vec2::ZERO,
             translation_changed: false,
             is_explicitly_disabled: false,
+            is_explicitly_stashed: false,
             is_disabled: false,
+            is_stashed: false,
             baseline_offset: 0.0,
             is_new: true,
             hovered: false,
@@ -189,15 +205,15 @@ impl WidgetState {
             request_accessibility: true,
             needs_accessibility: true,
             has_focus: false,
+            in_focus_chain: false,
             request_anim: true,
             needs_anim: true,
             needs_update_disabled: true,
+            needs_update_stashed: true,
             focus_chain: Vec::new(),
             children_changed: true,
             cursor: None,
-            text_registrations: Vec::new(),
             update_focus_chain: true,
-            is_stashed: false,
             #[cfg(debug_assertions)]
             needs_visit: VisitBool(false.into()),
             #[cfg(debug_assertions)]
@@ -222,6 +238,7 @@ impl WidgetState {
             request_anim: false,
             needs_anim: false,
             needs_update_disabled: false,
+            needs_update_stashed: false,
             children_changed: false,
             update_focus_chain: false,
             ..WidgetState::new(id, "<root>")
@@ -243,9 +260,11 @@ impl WidgetState {
 
     /// Update to incorporate state changes from a child.
     ///
-    /// This will also clear some requests in the child state.
-    ///
     /// This method is idempotent and can be called multiple times.
+    //
+    // TODO: though this method takes child state mutably, child state currently isn't actually
+    // mutated anymore. This method may start doing so again in the future, so keep taking &mut for
+    // now.
     pub(crate) fn merge_up(&mut self, child_state: &mut WidgetState) {
         self.needs_layout |= child_state.needs_layout;
         self.needs_style |= child_state.needs_style;
@@ -256,9 +275,8 @@ impl WidgetState {
         self.needs_update_disabled |= child_state.needs_update_disabled;
         self.has_focus |= child_state.has_focus;
         self.children_changed |= child_state.children_changed;
-        self.text_registrations
-            .append(&mut child_state.text_registrations);
         self.update_focus_chain |= child_state.update_focus_chain;
+        self.needs_update_stashed |= child_state.needs_update_stashed;
     }
 
     #[inline]
@@ -286,6 +304,13 @@ impl WidgetState {
     /// away.
     pub fn window_layout_rect(&self) -> Rect {
         Rect::from_origin_size(self.window_origin(), self.size)
+    }
+
+    /// Returns the area being edited by an IME, in global coordinates.
+    ///
+    /// By default, returns the same as [`Self::window_layout_rect`].
+    pub(crate) fn get_ime_area(&self) -> Rect {
+        self.ime_area.unwrap_or_else(|| self.size.to_rect()) + self.window_origin.to_vec2()
     }
 
     pub(crate) fn window_origin(&self) -> Point {

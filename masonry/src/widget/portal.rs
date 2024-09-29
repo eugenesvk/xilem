@@ -5,7 +5,7 @@
 
 use std::ops::Range;
 
-use accesskit::Role;
+use accesskit::{NodeBuilder, Role};
 use smallvec::{smallvec, SmallVec};
 use tracing::{trace_span, Span};
 use vello::kurbo::{Point, Rect, Size, Vec2};
@@ -14,7 +14,8 @@ use vello::Scene;
 use crate::widget::{Axis, ScrollBar, WidgetMut};
 use crate::{
     AccessCtx, AccessEvent, BoxConstraints, ComposeCtx, EventCtx, LayoutCtx, LifeCycle,
-    LifeCycleCtx, PaintCtx, PointerEvent, StatusChange, TextEvent, Widget, WidgetId, WidgetPod,
+    LifeCycleCtx, PaintCtx, PointerEvent, RegisterCtx, StatusChange, TextEvent, Widget, WidgetId,
+    WidgetPod,
 };
 
 // TODO - refactor - see https://github.com/linebender/xilem/issues/366
@@ -330,6 +331,12 @@ impl<W: Widget> Widget for Portal<W> {
 
     fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, _event: &StatusChange) {}
 
+    fn register_children(&mut self, ctx: &mut RegisterCtx) {
+        ctx.register_child(&mut self.child);
+        ctx.register_child(&mut self.scrollbar_horizontal);
+        ctx.register_child(&mut self.scrollbar_vertical);
+    }
+
     fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle) {
         match event {
             LifeCycle::WidgetAdded => {
@@ -360,10 +367,6 @@ impl<W: Widget> Widget for Portal<W> {
             }
             _ => {}
         }
-
-        self.child.lifecycle(ctx, event);
-        self.scrollbar_horizontal.lifecycle(ctx, event);
-        self.scrollbar_vertical.lifecycle(ctx, event);
     }
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
@@ -443,13 +446,13 @@ impl<W: Widget> Widget for Portal<W> {
         Role::GenericContainer
     }
 
-    fn accessibility(&mut self, ctx: &mut AccessCtx) {
+    fn accessibility(&mut self, ctx: &mut AccessCtx, node: &mut NodeBuilder) {
         // TODO - Double check this code
         // Not sure about these values
         if false {
-            ctx.current_node().set_scroll_x(self.viewport_pos.x);
-            ctx.current_node().set_scroll_y(self.viewport_pos.y);
-            ctx.current_node().set_scroll_x_min(0.0);
+            node.set_scroll_x(self.viewport_pos.x);
+            node.set_scroll_y(self.viewport_pos.y);
+            node.set_scroll_x_min(0.0);
 
             let x_max = ctx
                 .get_raw_ref(&self.scrollbar_horizontal)
@@ -459,12 +462,12 @@ impl<W: Widget> Widget for Portal<W> {
                 .get_raw_ref(&self.scrollbar_vertical)
                 .widget()
                 .portal_size;
-            ctx.current_node().set_scroll_x_max(x_max);
-            ctx.current_node().set_scroll_y_min(0.0);
-            ctx.current_node().set_scroll_y_max(y_max);
+            node.set_scroll_x_max(x_max);
+            node.set_scroll_y_min(0.0);
+            node.set_scroll_y_max(y_max);
         }
 
-        ctx.current_node().set_clips_children();
+        node.set_clips_children();
     }
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {

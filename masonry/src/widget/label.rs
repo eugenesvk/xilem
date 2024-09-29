@@ -3,7 +3,7 @@
 
 //! A label widget.
 
-use accesskit::Role;
+use accesskit::{NodeBuilder, Role};
 use parley::layout::Alignment;
 use parley::style::{FontFamily, FontStack};
 use smallvec::SmallVec;
@@ -12,11 +12,11 @@ use vello::kurbo::{Affine, Point, Size};
 use vello::peniko::BlendMode;
 use vello::Scene;
 
-use crate::text::{TextBrush, TextLayout, TextStorage};
+use crate::text::{TextBrush, TextLayout};
 use crate::widget::WidgetMut;
 use crate::{
     AccessCtx, AccessEvent, ArcStr, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx,
-    PaintCtx, PointerEvent, StatusChange, TextEvent, Widget, WidgetId,
+    PaintCtx, PointerEvent, RegisterCtx, StatusChange, TextEvent, Widget, WidgetId,
 };
 
 // added padding between the edges of the widget and the text.
@@ -178,6 +178,8 @@ impl Widget for Label {
 
     fn on_access_event(&mut self, _ctx: &mut EventCtx, _event: &AccessEvent) {}
 
+    fn register_children(&mut self, _ctx: &mut RegisterCtx) {}
+
     #[allow(missing_docs)]
     fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, event: &StatusChange) {
         match event {
@@ -202,11 +204,7 @@ impl Widget for Label {
                 // TODO: Parley seems to require a relayout when colours change
                 ctx.request_layout();
             }
-            LifeCycle::BuildFocusChain => {
-                if !self.text_layout.text().links().is_empty() {
-                    tracing::warn!("Links present in text, but not yet integrated");
-                }
-            }
+            LifeCycle::BuildFocusChain => {}
             _ => {}
         }
     }
@@ -273,9 +271,8 @@ impl Widget for Label {
         Role::Label
     }
 
-    fn accessibility(&mut self, ctx: &mut AccessCtx) {
-        ctx.current_node()
-            .set_name(self.text().as_str().to_string());
+    fn accessibility(&mut self, _ctx: &mut AccessCtx, node: &mut NodeBuilder) {
+        node.set_name(self.text().as_ref().to_string());
     }
 
     fn skip_pointer(&self) -> bool {
@@ -291,7 +288,7 @@ impl Widget for Label {
     }
 
     fn get_debug_text(&self) -> Option<String> {
-        Some(self.text_layout.text().as_str().to_string())
+        Some(self.text_layout.text().as_ref().to_string())
     }
 }
 

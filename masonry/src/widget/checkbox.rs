@@ -3,7 +3,7 @@
 
 //! A checkbox widget.
 
-use accesskit::{DefaultActionVerb, Role, Toggled};
+use accesskit::{DefaultActionVerb, NodeBuilder, Role, Toggled};
 use smallvec::{smallvec, SmallVec};
 use tracing::{trace, trace_span, Span};
 use vello::kurbo::{Affine, BezPath, Cap, Join, Size, Stroke};
@@ -11,11 +11,11 @@ use vello::Scene;
 
 use crate::action::Action;
 use crate::paint_scene_helpers::{fill_lin_gradient, stroke, UnitPoint};
-use crate::text::TextStorage;
 use crate::widget::{Label, WidgetMut};
+
 use crate::{
-    theme, AccessCtx, AccessEvent, ArcStr, BoxConstraints, EventCtx, LayoutCtx, LifeCycle,
-    LifeCycleCtx, PaintCtx, PointerEvent, StatusChange, TextEvent, Widget, WidgetId, WidgetPod,
+    theme, AccessCtx, AccessEvent, ArcStr, BoxConstraints, EventCtx, LayoutCtx, LifeCycleCtx,
+    PaintCtx, PointerEvent, RegisterCtx, StatusChange, TextEvent, Widget, WidgetId, WidgetPod,
 };
 
 /// A checkbox that can be toggled.
@@ -106,8 +106,8 @@ impl Widget for Checkbox {
         ctx.request_paint();
     }
 
-    fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle) {
-        self.label.lifecycle(ctx, event);
+    fn register_children(&mut self, ctx: &mut RegisterCtx) {
+        ctx.register_child(&mut self.label);
     }
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
@@ -186,23 +186,21 @@ impl Widget for Checkbox {
         Role::CheckBox
     }
 
-    fn accessibility(&mut self, ctx: &mut AccessCtx) {
+    fn accessibility(&mut self, ctx: &mut AccessCtx, node: &mut NodeBuilder) {
         // IMPORTANT: We don't want to merge this code in practice, because
         // the child label already has a 'name' property.
         // This is more of a proof of concept of `get_raw_ref()`.
         if false {
             let label = ctx.get_raw_ref(&self.label);
-            let name = label.widget().text().as_str().to_string();
-            ctx.current_node().set_name(name);
+            let name = label.widget().text().as_ref().to_string();
+            node.set_name(name);
         }
         if self.checked {
-            ctx.current_node().set_toggled(Toggled::True);
-            ctx.current_node()
-                .set_default_action_verb(DefaultActionVerb::Uncheck);
+            node.set_toggled(Toggled::True);
+            node.set_default_action_verb(DefaultActionVerb::Uncheck);
         } else {
-            ctx.current_node().set_toggled(Toggled::False);
-            ctx.current_node()
-                .set_default_action_verb(DefaultActionVerb::Check);
+            node.set_toggled(Toggled::False);
+            node.set_default_action_verb(DefaultActionVerb::Check);
         }
     }
 

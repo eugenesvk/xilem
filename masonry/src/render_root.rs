@@ -28,14 +28,14 @@ use crate::passes::paint::root_paint;
 use crate::passes::update::{
     run_update_anim_pass, run_update_disabled_pass, run_update_focus_chain_pass,
     run_update_focus_pass, run_update_new_widgets_pass, run_update_pointer_pass,
-    run_update_scroll_pass,
+    run_update_scroll_pass, run_update_stashed_pass,
 };
 use crate::text::TextBrush;
 use crate::tree_arena::TreeArena;
 use crate::widget::WidgetArena;
 use crate::widget::{WidgetMut, WidgetRef, WidgetState};
 use crate::{
-    AccessEvent, Action, BoxConstraints, CursorIcon, Handled, Widget, WidgetId, WidgetPod,
+    AccessEvent, Action, BoxConstraints, CursorIcon, Handled, QueryCtx, Widget, WidgetId, WidgetPod,
 };
 
 // --- MARK: STRUCTS ---
@@ -74,10 +74,10 @@ pub(crate) struct RenderRootState {
     pub(crate) font_context: FontContext,
     pub(crate) text_layout_context: LayoutContext<TextBrush>,
     pub(crate) mutate_callbacks: Vec<MutateCallback>,
+    pub(crate) is_ime_active: bool,
     pub(crate) scenes: HashMap<WidgetId, Scene>,
 }
 
-#[allow(clippy::type_complexity)]
 pub(crate) struct MutateCallback {
     pub(crate) id: WidgetId,
     pub(crate) callback: Box<dyn FnOnce(WidgetMut<'_, Box<dyn Widget>>)>,
@@ -155,6 +155,7 @@ impl RenderRoot {
                 },
                 text_layout_context: LayoutContext::new(),
                 mutate_callbacks: Vec::new(),
+                is_ime_active: false,
                 scenes: HashMap::new(),
             },
             widget_arena: WidgetArena {
@@ -164,10 +165,10 @@ impl RenderRoot {
             rebuild_access_tree: true,
         };
 
-        // We send WidgetAdded to all widgets right away
-        let mut dummy_state = WidgetState::synthetic(root.root.id(), root.get_kurbo_size());
-        run_update_new_widgets_pass(&mut root, &mut dummy_state);
+        // We run a set of passes to initialize the widget tree
+        run_update_new_widgets_pass(&mut root);
         // TODO - Remove this line
+        let mut dummy_state = WidgetState::synthetic(root.root.id(), root.get_kurbo_size());
         root.post_event_processing(&mut dummy_state);
 
         // We run a layout pass right away to have a SetSize signal ready
@@ -195,17 +196,13 @@ impl RenderRoot {
                 // TODO - What we'd really like is to request a repaint and an accessibility
                 // pass for every single widget.
                 self.root_state().needs_layout = true;
-                self.state
-                    .signal_queue
-                    .push_back(RenderRootSignal::RequestRedraw);
+                self.state.emit_signal(RenderRootSignal::RequestRedraw);
                 Handled::Yes
             }
             WindowEvent::Resize(size) => {
                 self.size = size;
                 self.root_state().needs_layout = true;
-                self.state
-                    .signal_queue
-                    .push_back(RenderRootSignal::RequestRedraw);
+                self.state.emit_signal(RenderRootSignal::RequestRedraw);
                 Handled::Yes
             }
             WindowEvent::AnimFrame => {
@@ -231,9 +228,7 @@ impl RenderRoot {
             }
             WindowEvent::RebuildAccessTree => {
                 self.rebuild_access_tree = true;
-                self.state
-                    .signal_queue
-                    .push_back(RenderRootSignal::RequestRedraw);
+                self.state.emit_signal(RenderRootSignal::RequestRedraw);
                 Handled::Yes
             }
         }
@@ -290,9 +285,7 @@ impl RenderRoot {
         }
         if self.root_state().needs_layout {
             warn!("Widget requested layout during layout pass");
-            self.state
-                .signal_queue
-                .push_back(RenderRootSignal::RequestRedraw);
+            self.state.emit_signal(RenderRootSignal::RequestRedraw);
         }
 
         // TODO - Improve caching of scenes.
@@ -316,6 +309,7 @@ impl RenderRoot {
     }
 
     // --- MARK: ACCESS WIDGETS---
+    /// Get a [`WidgetRef`] to the root widget.
     pub fn get_root_widget(&self) -> WidgetRef<dyn Widget> {
         let root_state_token = self.widget_arena.widget_states.root_token();
         let root_widget_token = self.widget_arena.widgets.root_token();
@@ -335,12 +329,38 @@ impl RenderRoot {
             .downcast_ref::<Box<dyn Widget>>()
             .unwrap();
 
-        WidgetRef {
+        let ctx = QueryCtx {
+            global_state: &self.state,
             widget_state_children: state_ref.children,
             widget_children: widget_ref.children,
             widget_state: state_ref.item,
-            widget,
-        }
+        };
+
+        WidgetRef { ctx, widget }
+    }
+
+    /// Get a [`WidgetRef`] to a specific widget.
+    pub fn get_widget(&self, id: WidgetId) -> Option<WidgetRef<dyn Widget>> {
+        let state_ref = self.widget_arena.widget_states.find(id.to_raw())?;
+        let widget_ref = self
+            .widget_arena
+            .widgets
+            .find(id.to_raw())
+            .expect("found state but not widget");
+
+        // Box<dyn Widget> -> &dyn Widget
+        // Without this step, the type of `WidgetRef::widget` would be
+        // `&Box<dyn Widget> as &dyn Widget`, which would be an additional layer
+        // of indirection.
+        let widget = widget_ref.item;
+        let widget: &dyn Widget = &**widget;
+        let ctx = QueryCtx {
+            global_state: &self.state,
+            widget_state_children: state_ref.children,
+            widget_children: widget_ref.children,
+            widget_state: state_ref.item,
+        };
+        Some(WidgetRef { ctx, widget })
     }
 
     /// Get a [`WidgetMut`] to the root widget.
@@ -449,9 +469,7 @@ impl RenderRoot {
             let new_size = LogicalSize::new(size.width, size.height).to_physical(self.scale_factor);
             if self.size != new_size {
                 self.size = new_size;
-                self.state
-                    .signal_queue
-                    .push_back(RenderRootSignal::SetSize(new_size));
+                self.state.emit_signal(RenderRootSignal::SetSize(new_size));
             }
         }
 
@@ -494,7 +512,7 @@ impl RenderRoot {
             // TODO - Update IME handlers
             // Send TextFieldRemoved signal
 
-            run_update_new_widgets_pass(self, widget_state);
+            run_update_new_widgets_pass(self);
         }
 
         if self.state.debug_logger.layout_tree.root.is_none() {
@@ -509,10 +527,13 @@ impl RenderRoot {
             root_compose(self, widget_state);
         }
 
-        // Update the disabled state if necessary
+        // Update the disabled and stashed state if necessary
         // Always do this before updating the focus-chain
         if self.root_state().needs_update_disabled {
             run_update_disabled_pass(self);
+        }
+        if self.root_state().needs_update_stashed {
+            run_update_stashed_pass(self);
         }
 
         // Update the focus-chain if necessary
@@ -521,10 +542,10 @@ impl RenderRoot {
             run_update_focus_chain_pass(self);
         }
 
+        run_update_focus_pass(self, widget_state);
+
         if self.root_state().request_anim {
-            self.state
-                .signal_queue
-                .push_back(RenderRootSignal::RequestAnimFrame);
+            self.state.emit_signal(RenderRootSignal::RequestAnimFrame);
         }
 
         // We request a redraw if either the render tree or the accessibility
@@ -535,19 +556,21 @@ impl RenderRoot {
             || self.root_state().needs_accessibility
             || self.root_state().needs_layout
         {
-            self.state
-                .signal_queue
-                .push_back(RenderRootSignal::RequestRedraw);
+            self.state.emit_signal(RenderRootSignal::RequestRedraw);
         }
 
         run_mutate_pass(self, widget_state);
+    }
 
-        #[cfg(FALSE)]
-        for ime_field in widget_state.text_registrations.drain(..) {
-            let token = self.handle.add_text_field();
-            tracing::debug!("{:?} added", token);
-            self.ime_handlers.push((token, ime_field));
-        }
+    // Checks whether the given id points to a widget that is "interactive".
+    // i.e. not disabled or stashed.
+    // Only interactive widgets can have text focus or pointer capture.
+    pub(crate) fn is_still_interactive(&self, id: WidgetId) -> bool {
+        let Some(state) = self.widget_arena.widget_states.find(id.to_raw()) else {
+            return false;
+        };
+
+        !state.item.is_stashed && !state.item.is_disabled
     }
 
     pub(crate) fn widget_from_focus_chain(&mut self, forward: bool) -> Option<WidgetId> {
@@ -583,6 +606,28 @@ impl RenderRoot {
     // TODO - Store in RenderRootState
     pub(crate) fn focus_chain(&mut self) -> &[WidgetId] {
         &self.root_state().focus_chain
+    }
+}
+
+impl RenderRootState {
+    /// Send a signal to the runner of this app, which allows global actions to be triggered by a widget.
+    pub(crate) fn emit_signal(&mut self, signal: RenderRootSignal) {
+        self.signal_queue.push_back(signal);
+    }
+}
+
+impl RenderRootSignal {
+    pub(crate) fn new_ime_moved_signal(area: Rect) -> Self {
+        RenderRootSignal::ImeMoved(
+            LogicalPosition {
+                x: area.origin().x,
+                y: area.origin().y + area.size().height,
+            },
+            LogicalSize {
+                width: area.size().width,
+                height: area.size().height,
+            },
+        )
     }
 }
 

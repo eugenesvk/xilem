@@ -9,7 +9,7 @@ use tracing::{info_span, trace};
 use crate::passes::{merge_state_up, recurse_on_children};
 use crate::render_root::{RenderRoot, RenderRootSignal, RenderRootState};
 use crate::tree_arena::ArenaMut;
-use crate::{LifeCycle, LifeCycleCtx, StatusChange, Widget, WidgetId, WidgetState};
+use crate::{LifeCycle, LifeCycleCtx, RegisterCtx, StatusChange, Widget, WidgetId, WidgetState};
 
 fn get_id_path(root: &RenderRoot, widget_id: Option<WidgetId>) -> Vec<WidgetId> {
     let Some(widget_id) = widget_id else {
@@ -77,6 +77,13 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot, root_state: &mut Wi
     let pointer_pos = root.last_mouse_pos.map(|pos| (pos.x, pos.y).into());
 
     // -- UPDATE HOVERED WIDGETS --
+    // Release pointer capture if target can no longer hold it.
+    if let Some(id) = root.state.pointer_capture_target {
+        if !root.is_still_interactive(id) {
+            // TODO - Send PointerLeave event
+            root.state.pointer_capture_target = None;
+        }
+    }
 
     let mut next_hovered_widget = if let Some(pos) = pointer_pos {
         // TODO - Apply scale?
@@ -161,8 +168,7 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot, root_state: &mut Wi
 
     if root.state.cursor_icon != new_cursor {
         root.state
-            .signal_queue
-            .push_back(RenderRootSignal::SetCursor(new_cursor));
+            .emit_signal(RenderRootSignal::SetCursor(new_cursor));
     }
 
     root.state.cursor_icon = new_cursor;
@@ -175,10 +181,10 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot, root_state: &mut Wi
 // ----------------
 
 pub(crate) fn run_update_focus_pass(root: &mut RenderRoot, root_state: &mut WidgetState) {
-    // If the focused widget ends up disabled or removed, we set
+    // If the focused widget is disabled, stashed or removed, we set
     // the focused id to None
     if let Some(id) = root.state.next_focused_widget {
-        if !root.widget_arena.has(id) || root.widget_arena.get_state_mut(id).item.is_disabled {
+        if !root.is_still_interactive(id) {
             root.state.next_focused_widget = None;
         }
     }
@@ -237,6 +243,14 @@ pub(crate) fn run_update_focus_pass(root: &mut RenderRoot, root_state: &mut Widg
     }
 
     if prev_focused != next_focused {
+        let was_ime_active = root.state.is_ime_active;
+        let is_ime_active = if let Some(id) = next_focused {
+            root.widget_arena.get_state(id).item.is_text_input
+        } else {
+            false
+        };
+        root.state.is_ime_active = is_ime_active;
+
         run_single_update_pass(root, prev_focused, |widget, ctx| {
             widget.on_status_change(ctx, &StatusChange::FocusChanged(false));
         });
@@ -244,14 +258,18 @@ pub(crate) fn run_update_focus_pass(root: &mut RenderRoot, root_state: &mut Widg
             widget.on_status_change(ctx, &StatusChange::FocusChanged(true));
         });
 
-        // TODO: discriminate between text focus, and non-text focus.
-        root.state
-            .signal_queue
-            .push_back(if next_focused.is_some() {
-                RenderRootSignal::StartIme
-            } else {
-                RenderRootSignal::EndIme
-            });
+        if prev_focused.is_some() && was_ime_active {
+            root.state.emit_signal(RenderRootSignal::EndIme);
+        }
+        if next_focused.is_some() && is_ime_active {
+            root.state.emit_signal(RenderRootSignal::StartIme);
+        }
+
+        if let Some(id) = next_focused {
+            let ime_area = root.widget_arena.get_state(id).item.get_ime_area();
+            root.state
+                .emit_signal(RenderRootSignal::new_ime_moved_signal(ime_area));
+        }
     }
 
     root.state.focused_widget = root.state.next_focused_widget;
@@ -288,15 +306,10 @@ fn update_disabled_for_widget(
             .item
             .lifecycle(&mut ctx, &LifeCycle::DisabledChanged(disabled));
         state.item.is_disabled = disabled;
+        state.item.update_focus_chain = true;
     }
 
     state.item.needs_update_disabled = false;
-
-    if disabled && global_state.next_focused_widget == Some(id) {
-        // This may get overwritten. That's ok, because either way the
-        // focused widget, if there's one, won't be disabled.
-        global_state.next_focused_widget = None;
-    }
 
     let parent_state = state.item;
     recurse_on_children(
@@ -315,6 +328,61 @@ pub(crate) fn run_update_disabled_pass(root: &mut RenderRoot) {
 
     let (root_widget, root_state) = root.widget_arena.get_pair_mut(root.root.id());
     update_disabled_for_widget(&mut root.state, root_widget, root_state, false);
+}
+
+// ----------------
+
+// TODO - Document the stashed pass.
+// *Stashed* is for widgets that are no longer "part of the graph". So they can't get keyboard events, don't get painted, etc, but should keep some state.
+// The stereotypical use case would be the contents of hidden tabs in a "tab group" widget.
+// Scrolled-out widgets are *not* stashed.
+
+#[allow(clippy::only_used_in_recursion)]
+fn update_stashed_for_widget(
+    global_state: &mut RenderRootState,
+    mut widget: ArenaMut<'_, Box<dyn Widget>>,
+    state: ArenaMut<'_, WidgetState>,
+    parent_stashed: bool,
+) {
+    let _span = widget.item.make_trace_span().entered();
+    let id = state.item.id;
+
+    let stashed = state.item.is_explicitly_stashed || parent_stashed;
+    if !state.item.needs_update_stashed && stashed == state.item.is_stashed {
+        return;
+    }
+
+    if stashed != state.item.is_stashed {
+        // TODO - Send update event
+        state.item.is_stashed = stashed;
+        state.item.update_focus_chain = true;
+        // Note: We don't need request_repaint because stashing doesn't actually change
+        // how widgets are painted, only how the Scenes they create are composed.
+        state.item.needs_paint = true;
+        state.item.needs_accessibility = true;
+        // TODO - Remove once accessibility can be composed, same as above.
+        state.item.request_accessibility = true;
+    }
+
+    state.item.needs_update_stashed = false;
+
+    let parent_state = state.item;
+    recurse_on_children(
+        id,
+        widget.reborrow_mut(),
+        state.children,
+        |widget, mut state| {
+            update_stashed_for_widget(global_state, widget, state.reborrow_mut(), stashed);
+            parent_state.merge_up(state.item);
+        },
+    );
+}
+
+pub(crate) fn run_update_stashed_pass(root: &mut RenderRoot) {
+    let _span = info_span!("update_stashed").entered();
+
+    let (root_widget, root_state) = root.widget_arena.get_pair_mut(root.root.id());
+    update_stashed_for_widget(&mut root.state, root_widget, root_state, false);
 }
 
 // ----------------
@@ -416,17 +484,14 @@ fn update_new_widgets(
     }
     state.item.children_changed = false;
 
-    // This will recursively call WidgetPod::lifecycle for all children of this widget,
-    // which will add the new widgets to the arena.
     {
-        let mut ctx = LifeCycleCtx {
-            global_state,
-            widget_state: state.item,
+        let mut ctx = RegisterCtx {
             widget_state_children: state.children.reborrow_mut(),
             widget_children: widget.children.reborrow_mut(),
         };
-        let event = LifeCycle::Internal(crate::InternalLifeCycle::RouteWidgetAdded);
-        widget.item.lifecycle(&mut ctx, &event);
+        // The widget will call `RegisterCtx::register_child` on all its children,
+        // which will add the new widgets to the arena.
+        widget.item.register_children(&mut ctx);
     }
 
     if state.item.is_new {
@@ -459,21 +524,15 @@ fn update_new_widgets(
     );
 }
 
-pub(crate) fn run_update_new_widgets_pass(
-    root: &mut RenderRoot,
-    synthetic_root_state: &mut WidgetState,
-) {
+pub(crate) fn run_update_new_widgets_pass(root: &mut RenderRoot) {
     let _span = info_span!("update_new_widgets").entered();
 
     if root.root.incomplete() {
-        let mut ctx = LifeCycleCtx {
-            global_state: &mut root.state,
-            widget_state: synthetic_root_state,
+        let mut ctx = RegisterCtx {
             widget_state_children: root.widget_arena.widget_states.root_token_mut(),
             widget_children: root.widget_arena.widgets.root_token_mut(),
         };
-        let event = LifeCycle::Internal(crate::InternalLifeCycle::RouteWidgetAdded);
-        root.root.lifecycle(&mut ctx, &event);
+        ctx.register_child(&mut root.root);
     }
 
     let (root_widget, mut root_state) = root.widget_arena.get_pair_mut(root.root.id());
@@ -481,6 +540,9 @@ pub(crate) fn run_update_new_widgets_pass(
 }
 
 // ----------------
+
+// TODO https://github.com/linebender/xilem/issues/376 - Some implicit invariants:
+// - A widget only receives BuildFocusChain if none of its parents are hidden.
 
 // TODO - This logic was copy-pasted from WidgetPod code and may need to be refactored.
 // It doesn't quite behave like other update passes (for instance, some code runs after
@@ -502,6 +564,7 @@ fn update_focus_chain_for_widget(
     state.item.has_focus = global_state.focused_widget == Some(id);
     let had_focus = state.item.has_focus;
 
+    state.item.in_focus_chain = false;
     state.item.focus_chain.clear();
     {
         let mut ctx = LifeCycleCtx {

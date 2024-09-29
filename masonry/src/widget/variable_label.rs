@@ -5,7 +5,7 @@
 
 use std::cmp::Ordering;
 
-use accesskit::Role;
+use accesskit::{NodeBuilder, Role};
 use parley::fontique::Weight;
 use parley::layout::Alignment;
 use parley::style::{FontFamily, FontStack};
@@ -15,11 +15,11 @@ use vello::kurbo::{Affine, Point, Size};
 use vello::peniko::BlendMode;
 use vello::Scene;
 
-use crate::text::{Hinting, TextBrush, TextLayout, TextStorage};
+use crate::text::{Hinting, TextBrush, TextLayout};
 use crate::widget::WidgetMut;
 use crate::{
     AccessCtx, AccessEvent, ArcStr, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx,
-    PaintCtx, PointerEvent, StatusChange, TextEvent, Widget, WidgetId,
+    PaintCtx, PointerEvent, RegisterCtx, StatusChange, TextEvent, Widget, WidgetId,
 };
 
 use super::LineBreaking;
@@ -303,6 +303,8 @@ impl Widget for VariableLabel {
 
     fn on_access_event(&mut self, _ctx: &mut EventCtx, _event: &AccessEvent) {}
 
+    fn register_children(&mut self, _ctx: &mut RegisterCtx) {}
+
     #[allow(missing_docs)]
     fn on_status_change(&mut self, _ctx: &mut LifeCycleCtx, event: &StatusChange) {
         match event {
@@ -326,11 +328,6 @@ impl Widget for VariableLabel {
                 }
                 // TODO: Parley seems to require a relayout when colours change
                 ctx.request_layout();
-            }
-            LifeCycle::BuildFocusChain => {
-                if !self.text_layout.text().links().is_empty() {
-                    tracing::warn!("Links present in text, but not yet integrated");
-                }
             }
             LifeCycle::AnimFrame(time) => {
                 let millis = (*time as f64 / 1_000_000.) as f32;
@@ -411,9 +408,8 @@ impl Widget for VariableLabel {
         Role::Label
     }
 
-    fn accessibility(&mut self, ctx: &mut AccessCtx) {
-        ctx.current_node()
-            .set_name(self.text().as_str().to_string());
+    fn accessibility(&mut self, _ctx: &mut AccessCtx, node: &mut NodeBuilder) {
+        node.set_name(self.text().as_ref().to_string());
     }
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
@@ -425,7 +421,7 @@ impl Widget for VariableLabel {
     }
 
     fn get_debug_text(&self) -> Option<String> {
-        Some(self.text_layout.text().as_str().to_string())
+        Some(self.text_layout.text().as_ref().to_string())
     }
 }
 

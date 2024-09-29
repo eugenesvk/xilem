@@ -1,7 +1,7 @@
 // Copyright 2018 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use accesskit::Role;
+use accesskit::{NodeBuilder, Role};
 use parley::{
     layout::Alignment,
     style::{FontFamily, FontStack},
@@ -16,10 +16,10 @@ use vello::{
 
 use crate::widget::{LineBreaking, WidgetMut};
 use crate::{
-    text::{TextBrush, TextStorage, TextWithSelection},
+    text::{TextBrush, TextWithSelection},
     widget::label::LABEL_X_PADDING,
     AccessCtx, AccessEvent, ArcStr, BoxConstraints, CursorIcon, EventCtx, LayoutCtx, LifeCycle,
-    LifeCycleCtx, PaintCtx, PointerEvent, StatusChange, TextEvent, Widget, WidgetId,
+    LifeCycleCtx, PaintCtx, PointerEvent, RegisterCtx, StatusChange, TextEvent, Widget, WidgetId,
 };
 
 /// The prose widget is a widget which displays text which can be
@@ -193,6 +193,8 @@ impl Widget for Prose {
         // TODO - Handle accesskit::Action::SetTextSelection
     }
 
+    fn register_children(&mut self, _ctx: &mut RegisterCtx) {}
+
     #[allow(missing_docs)]
     fn on_status_change(&mut self, ctx: &mut LifeCycleCtx, event: &StatusChange) {
         match event {
@@ -223,10 +225,7 @@ impl Widget for Prose {
                 ctx.request_layout();
             }
             LifeCycle::BuildFocusChain => {
-                // TODO: This is *definitely* empty
-                if !self.text_layout.text().links().is_empty() {
-                    tracing::warn!("Links present in text, but not yet integrated");
-                }
+                // When we add links to `Prose`, they will probably need to be handled here.
             }
             _ => {}
         }
@@ -287,9 +286,8 @@ impl Widget for Prose {
         Role::Paragraph
     }
 
-    fn accessibility(&mut self, ctx: &mut AccessCtx) {
-        ctx.current_node()
-            .set_name(self.text().as_str().to_string());
+    fn accessibility(&mut self, _ctx: &mut AccessCtx, node: &mut NodeBuilder) {
+        node.set_name(self.text().as_ref().to_string());
     }
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
@@ -301,6 +299,6 @@ impl Widget for Prose {
     }
 
     fn get_debug_text(&self) -> Option<String> {
-        Some(self.text_layout.text().as_str().chars().take(100).collect())
+        Some(self.text_layout.text().as_ref().chars().take(100).collect())
     }
 }

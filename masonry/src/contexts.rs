@@ -5,7 +5,7 @@
 
 use std::time::Duration;
 
-use accesskit::{NodeBuilder, TreeUpdate};
+use accesskit::TreeUpdate;
 use parley::{FontContext, LayoutContext};
 use tracing::{trace, warn};
 use vello::kurbo::Vec2;
@@ -15,9 +15,9 @@ use crate::action::Action;
 use crate::passes::layout::run_layout_on;
 use crate::render_root::{MutateCallback, RenderRootSignal, RenderRootState};
 use crate::text::TextBrush;
-use crate::text_helpers::{ImeChangeSignal, TextFieldRegistration};
-use crate::tree_arena::ArenaMutChildren;
-use crate::widget::{WidgetMut, WidgetState};
+use crate::text_helpers::ImeChangeSignal;
+use crate::tree_arena::{ArenaMutChildren, ArenaRefChildren};
+use crate::widget::{WidgetMut, WidgetRef, WidgetState};
 use crate::{
     AllowRawMut, BoxConstraints, CursorIcon, Insets, Point, Rect, Size, Widget, WidgetId, WidgetPod,
 };
@@ -52,6 +52,14 @@ pub struct MutateCtx<'a> {
     pub(crate) widget_children: ArenaMutChildren<'a, Box<dyn Widget>>,
 }
 
+/// A context provided to methods of widgets requiring shared, read-only access.
+#[derive(Clone, Copy)]
+pub struct QueryCtx<'a> {
+    pub(crate) global_state: &'a RenderRootState,
+    pub(crate) widget_state: &'a WidgetState,
+    pub(crate) widget_state_children: ArenaRefChildren<'a, WidgetState>,
+    pub(crate) widget_children: ArenaRefChildren<'a, Box<dyn Widget>>,
+}
 
 /// A context provided to event handling methods of widgets.
 ///
@@ -66,10 +74,10 @@ pub struct EventCtx<'a> {
     pub(crate) is_handled: bool,
 }
 
-impl<'a> EventCtx<'a> {
-    pub fn get_colortokens(&self) -> ColorTokens {
-        self.global_state.colors.tokens
-    }
+/// A context provided to the [`Widget::register_children`] method on widgets.
+pub struct RegisterCtx<'a> {
+    pub(crate) widget_state_children: ArenaMutChildren<'a, WidgetState>,
+    pub(crate) widget_children: ArenaMutChildren<'a, Box<dyn Widget>>,
 }
 
 /// A context provided to the [`lifecycle`] method on widgets.
@@ -129,7 +137,6 @@ pub struct AccessCtx<'a> {
     pub(crate) widget_state_children: ArenaMutChildren<'a, WidgetState>,
     pub(crate) widget_children: ArenaMutChildren<'a, Box<dyn Widget>>,
     pub(crate) tree_update: &'a mut TreeUpdate,
-    pub(crate) current_node: NodeBuilder,
     pub(crate) rebuild_all: bool,
     pub(crate) scale_factor: f64,
 }
@@ -138,6 +145,7 @@ pub struct AccessCtx<'a> {
 // Methods for all context types
 impl_context_method!(
     MutateCtx<'_>,
+    QueryCtx<'_>,
     EventCtx<'_>,
     LifeCycleCtx<'_>,
     LayoutCtx<'_>,
@@ -214,6 +222,7 @@ impl_context_method!(
 // These methods access layout info calculated during the layout pass.
 impl_context_method!(
     MutateCtx<'_>,
+    QueryCtx<'_>,
     EventCtx<'_>,
     LifeCycleCtx<'_>,
     ComposeCtx<'_>,
@@ -257,6 +266,7 @@ impl_context_method!(
 // Access status information (hot/pointer captured/disabled/etc).
 impl_context_method!(
     MutateCtx<'_>,
+    QueryCtx<'_>,
     EventCtx<'_>,
     LifeCycleCtx<'_>,
     ComposeCtx<'_>,
@@ -321,6 +331,11 @@ impl_context_method!(
             self.widget_state.has_focus
         }
 
+        /// Whether this specific widget is in the focus chain.
+        pub fn is_in_focus_chain(&self) -> bool {
+            self.widget_state.in_focus_chain
+        }
+
         /// The disabled state of a widget.
         ///
         /// Returns `true` if this widget or any of its ancestors is explicitly disabled.
@@ -340,8 +355,7 @@ impl_context_method!(
 
         /// Check is widget is stashed.
         ///
-        /// **Note:** Stashed widgets are a WIP feature
-        // FIXME - take stashed parents into account
+        /// **Note:** Stashed widgets are a WIP feature.
         pub fn is_stashed(&self) -> bool {
             self.widget_state.is_stashed
         }
@@ -419,6 +433,34 @@ impl<'a> MutateCtx<'a> {
             widget_state: self.widget_state,
             widget_state_children: self.widget_state_children.reborrow_mut(),
             widget_children: self.widget_children.reborrow_mut(),
+        }
+    }
+}
+
+// --- MARK: WIDGET_REF ---
+// Methods to get a child WidgetRef from a parent.
+impl<'w> QueryCtx<'w> {
+    /// Return a [`WidgetRef`] to a child widget.
+    pub fn get(self, child: WidgetId) -> WidgetRef<'w, dyn Widget> {
+        let child_state = self
+            .widget_state_children
+            .into_child(child.to_raw())
+            .expect("get: child not found");
+        let child = self
+            .widget_children
+            .into_child(child.to_raw())
+            .expect("get: child not found");
+
+        let ctx = QueryCtx {
+            global_state: self.global_state,
+            widget_state_children: child_state.children,
+            widget_children: child.children,
+            widget_state: child_state.item,
+        };
+
+        WidgetRef {
+            ctx,
+            widget: child.item,
         }
     }
 }
@@ -596,8 +638,7 @@ impl_context_method!(
         pub fn submit_action(&mut self, action: Action) {
             trace!("submit_action");
             self.global_state
-                .signal_queue
-                .push_back(RenderRootSignal::Action(action, self.widget_state.id));
+                .emit_signal(RenderRootSignal::Action(action, self.widget_state.id));
         }
 
         /// Request a timer event.
@@ -614,14 +655,16 @@ impl_context_method!(
         ///
         /// This will *not* trigger a layout pass.
         ///
-        /// **Note:** Stashed widgets are a WIP feature
+        /// **Note:** Stashed widgets are a WIP feature.
         pub fn set_stashed(&mut self, child: &mut WidgetPod<impl Widget>, stashed: bool) {
-            if self.get_child_state_mut(child).is_stashed != stashed {
-                self.widget_state.children_changed = true;
-                self.widget_state.update_focus_chain = true;
+            let child_state = self.get_child_state_mut(child);
+            // Stashing is generally a property derived from the parent widget's state
+            // (rather than set imperatively), so it is likely to be set as part of passes.
+            // Therefore, we avoid re-running the update_stashed_pass in most cases.
+            if child_state.is_explicitly_stashed != stashed {
+                child_state.needs_update_stashed = true;
+                child_state.is_explicitly_stashed = stashed;
             }
-
-            self.get_child_state_mut(child).is_stashed = stashed;
         }
     }
 );
@@ -750,6 +793,24 @@ impl EventCtx<'_> {
     }
 }
 
+impl RegisterCtx<'_> {
+    /// Register a child widget.
+    ///
+    /// Container widgets should call this on all their children in
+    /// their implementation of [`Widget::register_children`].
+    pub fn register_child(&mut self, child: &mut WidgetPod<impl Widget>) {
+        let Some(widget) = child.take_inner() else {
+            return;
+        };
+
+        let id = child.id().to_raw();
+        let state = WidgetState::new(child.id(), widget.short_type_name());
+
+        self.widget_children.insert_child(id, Box::new(widget));
+        self.widget_state_children.insert_child(id, state);
+    }
+}
+
 impl LifeCycleCtx<'_> {
     /// Register this widget to be eligile to accept focus automatically.
     ///
@@ -761,14 +822,12 @@ impl LifeCycleCtx<'_> {
     pub fn register_for_focus(&mut self) {
         trace!("register_for_focus");
         self.widget_state.focus_chain.push(self.widget_id());
+        self.widget_state.in_focus_chain = true;
     }
 
     /// Register this widget as accepting text input.
     pub fn register_as_text_input(&mut self) {
-        let registration = TextFieldRegistration {
-            widget_id: self.widget_id(),
-        };
-        self.widget_state.text_registrations.push(registration);
+        self.widget_state.is_text_input = true;
     }
 
     // TODO - remove - See issue https://github.com/linebender/xilem/issues/366
@@ -1042,22 +1101,6 @@ impl_context_method!(LayoutCtx<'_>, PaintCtx<'_>, {
     }
 });
 
-impl PaintCtx<'_> {
-    // signal may be useful elsewhere, but is currently only used on PaintCtx
-    /// Submit a [`RenderRootSignal`]
-    ///
-    /// Note: May be removed in future, and replaced with more specific methods.
-    pub fn signal(&mut self, s: RenderRootSignal) {
-        self.global_state.signal_queue.push_back(s);
-    }
-}
-
-impl AccessCtx<'_> {
-    pub fn current_node(&mut self) -> &mut NodeBuilder {
-        &mut self.current_node
-    }
-}
-
 // --- MARK: RAW WRAPPERS ---
 macro_rules! impl_get_raw {
     ($SomeCtx:tt) => {
@@ -1160,9 +1203,6 @@ impl<'s> AccessCtx<'s> {
             widget_children: child_mut.children,
             global_state: self.global_state,
             tree_update: self.tree_update,
-            // TODO - This doesn't make sense. NodeBuilder should probably be split
-            // out from AccessCtx.
-            current_node: NodeBuilder::default(),
             rebuild_all: self.rebuild_all,
             scale_factor: self.scale_factor,
         };
