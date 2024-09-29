@@ -107,6 +107,8 @@ pub trait Widget: AsAny {
 
     fn compose(&mut self, ctx: &mut ComposeCtx) {}
 
+    //fn style(&mut self, ctx: &mut StyleCtx) {}
+
     /// Paint the widget appearance.
     ///
     /// Container widgets can paint a background before recursing to their

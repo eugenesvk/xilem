@@ -146,7 +146,7 @@ fn main() -> Result<(), EventLoopError> {
         window_attributes,
         &event_loop,
         widget,
-        Color::BLACK,
+        //Color::BLACK,
     );
 
     let mut app = ExternalApp {

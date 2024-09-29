@@ -9,6 +9,7 @@ use parley::{FontContext, LayoutContext};
 use tracing::warn;
 use vello::kurbo::{self, Rect};
 use vello::Scene;
+use xilem_colors::Colorix;
 
 #[cfg(not(target_arch = "wasm32"))]
 use std::time::Instant;
@@ -60,6 +61,7 @@ pub struct RenderRoot {
 
 // TODO - Document these fields.
 pub(crate) struct RenderRootState {
+    pub(crate) colors: Colorix,
     pub(crate) debug_logger: DebugLogger,
     pub(crate) signal_queue: VecDeque<RenderRootSignal>,
     pub(crate) focused_widget: Option<WidgetId>,
@@ -134,6 +136,7 @@ impl RenderRoot {
             last_mouse_pos: None,
             cursor_icon: CursorIcon::Default,
             state: RenderRootState {
+                colors: Colorix::init(),
                 debug_logger: DebugLogger::new(false),
                 signal_queue: VecDeque::new(),
                 focused_widget: None,

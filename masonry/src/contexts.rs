@@ -9,6 +9,7 @@ use accesskit::{NodeBuilder, TreeUpdate};
 use parley::{FontContext, LayoutContext};
 use tracing::{trace, warn};
 use vello::kurbo::Vec2;
+use xilem_colors::tokens::ColorTokens;
 
 use crate::action::Action;
 use crate::passes::layout::run_layout_on;
@@ -51,6 +52,7 @@ pub struct MutateCtx<'a> {
     pub(crate) widget_children: ArenaMutChildren<'a, Box<dyn Widget>>,
 }
 
+
 /// A context provided to event handling methods of widgets.
 ///
 /// Widgets should call [`request_paint`](Self::request_paint) whenever an event causes a change
@@ -64,6 +66,12 @@ pub struct EventCtx<'a> {
     pub(crate) is_handled: bool,
 }
 
+impl<'a> EventCtx<'a> {
+    pub fn get_colortokens(&self) -> ColorTokens {
+        self.global_state.colors.tokens
+    }
+}
+
 /// A context provided to the [`lifecycle`] method on widgets.
 ///
 /// [`lifecycle`]: Widget::lifecycle
@@ -72,6 +80,12 @@ pub struct LifeCycleCtx<'a> {
     pub(crate) widget_state: &'a mut WidgetState,
     pub(crate) widget_state_children: ArenaMutChildren<'a, WidgetState>,
     pub(crate) widget_children: ArenaMutChildren<'a, Box<dyn Widget>>,
+}
+
+impl<'a> LifeCycleCtx<'a> {
+    pub fn get_colortokens(&self) -> ColorTokens {
+        self.global_state.colors.tokens
+    }
 }
 
 /// A context provided to layout handling methods of widgets.
@@ -103,6 +117,12 @@ pub struct PaintCtx<'a> {
     pub(crate) debug_paint: bool,
 }
 
+impl<'a> PaintCtx<'a> {
+    pub fn get_colortokens(&self) -> ColorTokens {
+        self.global_state.colors.tokens
+    }
+}
+
 pub struct AccessCtx<'a> {
     pub(crate) global_state: &'a mut RenderRootState,
     pub(crate) widget_state: &'a WidgetState,
@@ -124,7 +144,7 @@ impl_context_method!(
     ComposeCtx<'_>,
     PaintCtx<'_>,
     AccessCtx<'_>,
-    {
+   {
         /// get the `WidgetId` of the current widget.
         pub fn widget_id(&self) -> WidgetId {
             self.widget_state.id
@@ -243,22 +263,22 @@ impl_context_method!(
     PaintCtx<'_>,
     AccessCtx<'_>,
     {
-        /// The "hot" (aka hover) status of a widget.
+        /// The "hovered" status of a widget.
         ///
-        /// A widget is "hot" when the mouse is hovered over it. Widgets will
+        /// A widget is "hovered" when the mouse is hovered over it. Widgets will
         /// often change their appearance as a visual indication that they
         /// will respond to mouse interaction.
         ///
-        /// The hot status is computed from the widget's layout rect. In a
+        /// The hovered status is computed from the widget's layout rect. In a
         /// container hierarchy, all widgets with layout rects containing the
         /// mouse position have hot status.
         ///
         /// Discussion: there is currently some confusion about whether a
-        /// widget can be considered hot when some other widget has captured the
+        /// widget can be considered hovered when some other widget has captured the
         /// pointer (for example, when clicking one widget and dragging to the
         /// next). The documentation should clearly state the resolution.
-        pub fn is_hot(&self) -> bool {
-            self.widget_state.is_hot
+        pub fn hovered(&self) -> bool {
+            self.widget_state.hovered
         }
 
         /// Whether the pointer is captured by this widget.
@@ -341,7 +361,7 @@ impl_context_method!(EventCtx<'_>, {
     ///
     /// [`clear_cursor`]: EventCtx::clear_cursor
     /// [`override_cursor`]: EventCtx::override_cursor
-    /// [`hot`]: EventCtx::is_hot
+    /// [`hovered`]: EventCtx::hovered
     /// [`has_pointer_capture`]: EventCtx::has_pointer_capture
     pub fn set_cursor(&mut self, cursor: &CursorIcon) {
         trace!("set_cursor {:?}", cursor);
@@ -504,6 +524,32 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, LifeCycleCtx<'_>, {
         todo!("invalidate_text_input");
     }
 });
+
+impl_context_method!(
+    PaintCtx<'_>,{
+        pub fn mutate_now<W: Widget>(
+            &mut self,
+            child: &mut WidgetPod<W>,
+            f: impl FnOnce(WidgetMut<'_, W>) + Send + 'static,
+        ) {
+            let callback = MutateCallback {
+                id: child.id(),
+                callback: Box::new(|mut widget_mut| f(widget_mut.downcast())),
+            };
+            self.global_state.mutate_callbacks.push(callback);
+        }
+        pub fn mutate_self_now(
+            &mut self,
+            f: impl FnOnce(WidgetMut<'_, Box<dyn Widget>>) + Send + 'static,
+        ) {
+            let callback = MutateCallback {
+                id: self.widget_state.id,
+                callback: Box::new(f),
+            };
+            self.global_state.mutate_callbacks.push(callback);
+        }
+    }
+);
 
 // --- MARK: OTHER METHODS ---
 // Methods on all context types except PaintCtx and AccessCtx

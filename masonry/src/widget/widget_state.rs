@@ -5,6 +5,7 @@
 
 use std::sync::atomic::{AtomicBool, Ordering};
 use vello::kurbo::{Insets, Point, Rect, Size, Vec2};
+use xilem_colors::Colorix;
 
 use crate::text_helpers::TextFieldRegistration;
 use crate::{CursorIcon, WidgetId};
@@ -44,6 +45,7 @@ pub struct WidgetState {
     // --- LAYOUT ---
     /// The size of the widget; this is the value returned by the widget's layout
     /// method.
+    pub(crate) colors: Colorix,
     pub(crate) size: Size,
     /// The origin of the widget in the parent's coordinate space; together with
     /// `size` these constitute the widget's layout rect.
@@ -87,6 +89,11 @@ pub struct WidgetState {
     /// This widget or a descendant explicitly requested layout
     pub(crate) needs_layout: bool,
 
+    /// This widget explicitly requested style
+    pub(crate) request_style: bool,
+    /// This widget or a descendant explicitly requested style
+    pub(crate) needs_style: bool,
+
     /// The compose method must be called on this widget
     pub(crate) request_compose: bool,
     /// The compose method must be called on this widget or a descendant
@@ -127,7 +134,7 @@ pub struct WidgetState {
     /// This widget or an ancestor has been disabled.
     pub(crate) is_disabled: bool,
 
-    pub(crate) is_hot: bool,
+    pub(crate) hovered: bool,
 
     /// In the focused path, starting from window and ending at the focused widget.
     /// Descendants of the focused widget are not in the focused path.
@@ -154,6 +161,7 @@ pub(crate) struct VisitBool(pub AtomicBool);
 impl WidgetState {
     pub(crate) fn new(id: WidgetId, widget_name: &'static str) -> WidgetState {
         WidgetState {
+            colors: Colorix::init(),
             id,
             origin: Point::ORIGIN,
             window_origin: Point::ORIGIN,
@@ -169,9 +177,11 @@ impl WidgetState {
             is_disabled: false,
             baseline_offset: 0.0,
             is_new: true,
-            is_hot: false,
+            hovered: false,
             request_layout: true,
             needs_layout: true,
+            request_style: false,
+            needs_style: false,
             request_compose: true,
             needs_compose: true,
             request_paint: true,
@@ -238,6 +248,7 @@ impl WidgetState {
     /// This method is idempotent and can be called multiple times.
     pub(crate) fn merge_up(&mut self, child_state: &mut WidgetState) {
         self.needs_layout |= child_state.needs_layout;
+        self.needs_style |= child_state.needs_style;
         self.needs_compose |= child_state.needs_compose;
         self.needs_paint |= child_state.needs_paint;
         self.needs_anim |= child_state.needs_anim;

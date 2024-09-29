@@ -20,6 +20,7 @@ cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
 workspace = true
 
 [dependencies]
+xilem_colors.workspace = true
 vello.workspace = true
 wgpu.workspace = true
 parley.workspace = true

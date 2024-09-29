@@ -46,7 +46,7 @@ pub struct Xilem<State, Logic> {
     state: State,
     logic: Logic,
     runtime: tokio::runtime::Runtime,
-    background_color: Color,
+    //background_color: Color,
     // Font data to include in loading.
     fonts: Vec<Vec<u8>>,
 }
@@ -62,7 +62,7 @@ where
             state,
             logic,
             runtime,
-            background_color: Color::BLACK,
+            //background_color: Color::BLACK,
             fonts: Vec::new(),
         }
     }
@@ -76,10 +76,10 @@ where
     }
 
     /// Sets main window background color.
-    pub fn background_color(mut self, color: Color) -> Self {
-        self.background_color = color;
-        self
-    }
+    // pub fn background_color(mut self, color: Color) -> Self {
+    //     self.background_color = color;
+    //     self
+    // }
 
     // TODO: Make windows a specific view
     pub fn run_windowed(
@@ -115,9 +115,9 @@ where
     {
         let event_loop = event_loop.build()?;
         let proxy = event_loop.create_proxy();
-        let bg_color = self.background_color;
+        //let bg_color = self.background_color;
         let (root_widget, driver) = self.into_driver(Arc::new(MasonryProxy(proxy)));
-        event_loop_runner::run_with(event_loop, window_attributes, root_widget, driver, bg_color)
+        event_loop_runner::run_with(event_loop, window_attributes, root_widget, driver)
     }
 
     pub fn into_driver(

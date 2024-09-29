@@ -397,7 +397,7 @@ impl Widget for Split {
                         // Dependending on where the mouse cursor is when the button is released,
                         // the cursor might or might not need to be changed
                         self.is_bar_hover =
-                            ctx.is_hot() && self.bar_hit_test(ctx.size(), state.position);
+                            ctx.hovered() && self.bar_hit_test(ctx.size(), state.position);
                         if !self.is_bar_hover {
                             ctx.clear_cursor();
                         }
@@ -418,7 +418,7 @@ impl Widget for Split {
                         ctx.request_layout();
                     } else {
                         // If not active, set cursor when hovering state changes
-                        let hover = ctx.is_hot() && self.bar_hit_test(ctx.size(), state.position);
+                        let hover = ctx.hovered() && self.bar_hit_test(ctx.size(), state.position);
                         if self.is_bar_hover != hover {
                             self.is_bar_hover = hover;
                             if hover {

@@ -244,6 +244,8 @@ impl Widget for Label {
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
+        let tokens = ctx.get_colortokens();
+
         if self.text_layout.needs_rebuild() {
             debug_panic!("Called Label paint before layout");
         }
@@ -251,6 +253,14 @@ impl Widget for Label {
             let clip_rect = ctx.size().to_rect();
             scene.push_layer(BlendMode::default(), 1., Affine::IDENTITY, &clip_rect);
         }
+        // self.brush = if ctx.hovered() && !ctx.is_disabled() {tokens.high_contrast_text.into()}
+        // else {tokens.low_contrast_text.into()};
+        // self.text_layout.set_brush(self.brush.clone());
+
+        // let (font_ctx, layout_ctx) = ctx.text_contexts();
+        // self.text_layout.rebuild(font_ctx, layout_ctx);
+        self.brush = tokens.text_color().into();
+
         self.text_layout
             .draw(scene, Point::new(LABEL_X_PADDING, 0.0));
 

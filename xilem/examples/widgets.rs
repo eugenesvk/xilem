@@ -60,7 +60,7 @@ fn border_box<State: 'static, Action: 'static>(
         ))
         .direction(Axis::Horizontal),
     )
-    .border(Color::WHITE, 2.)
+   // .border(Color::WHITE, 2.)
     .width(450.)
     .height(200.)
 }

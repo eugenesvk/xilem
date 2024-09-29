@@ -20,14 +20,14 @@ fn next_pointer_event(recording: &Recording) -> Option<PointerEvent> {
     None
 }
 
-fn is_hot(harness: &TestHarness, id: WidgetId) -> bool {
-    harness.get_widget(id).state().is_hot
+fn hovered(harness: &TestHarness, id: WidgetId) -> bool {
+    harness.get_widget(id).state().hovered
 }
 
 fn next_hot_changed(recording: &Recording) -> Option<bool> {
     while let Some(event) = recording.next() {
         match event {
-            Record::SC(StatusChange::HotChanged(hot)) => return Some(hot),
+            Record::SC(StatusChange::HoveredChanged(hot)) => return Some(hot),
             _ => {}
         }
     }
@@ -47,7 +47,7 @@ fn propagate_hot() {
         .with_child_id(
             Flex::column()
                 .with_spacer(100.0)
-                .with_child_id(Button::new("hot").record(&button_rec), button)
+                .with_child_id(Button::new("hovered").record(&button_rec), button)
                 .with_spacer(10.0)
                 .record(&padding_rec),
             pad,
@@ -62,10 +62,10 @@ fn propagate_hot() {
     padding_rec.clear();
     button_rec.clear();
 
-    harness.inspect_widgets(|widget| assert!(!widget.state().is_hot));
+    harness.inspect_widgets(|widget| assert!(!widget.state().hovered));
 
     // What we are doing here is moving the mouse to different widgets,
-    // and verifying both the widget's `is_hot` status and also that
+    // and verifying both the widget's `hovered` status and also that
     // each widget received the expected HotChanged messages.
 
     // Move to empty box
@@ -82,9 +82,9 @@ fn propagate_hot() {
     eprintln!("pad: {pad:?}");
     eprintln!("button: {button:?}");
 
-    assert!(is_hot(&harness, root));
-    assert!(is_hot(&harness, empty));
-    assert!(!is_hot(&harness, pad));
+    assert!(hovered(&harness, root));
+    assert!(hovered(&harness, empty));
+    assert!(!hovered(&harness, pad));
 
     assert_eq!(next_hot_changed(&root_rec), Some(true));
     assert_eq!(next_hot_changed(&padding_rec), None);
@@ -97,10 +97,10 @@ fn propagate_hot() {
     // starts with a big spacer, the mouse is moved to the padding area, not the Button
     harness.mouse_move_to(pad);
 
-    assert!(is_hot(&harness, pad));
-    assert!(!is_hot(&harness, empty));
-    assert!(!is_hot(&harness, button));
-    assert!(is_hot(&harness, pad));
+    assert!(hovered(&harness, pad));
+    assert!(!hovered(&harness, empty));
+    assert!(!hovered(&harness, button));
+    assert!(hovered(&harness, pad));
 
     assert_eq!(next_hot_changed(&root_rec), None);
     assert_eq!(next_hot_changed(&padding_rec), Some(true));
@@ -111,10 +111,10 @@ fn propagate_hot() {
 
     harness.mouse_move_to(button);
 
-    assert!(is_hot(&harness, root));
-    assert!(!is_hot(&harness, empty));
-    assert!(is_hot(&harness, button));
-    assert!(is_hot(&harness, pad));
+    assert!(hovered(&harness, root));
+    assert!(!hovered(&harness, empty));
+    assert!(hovered(&harness, button));
+    assert!(hovered(&harness, pad));
 
     assert_eq!(next_hot_changed(&padding_rec), None);
     assert_eq!(next_hot_changed(&button_rec), Some(true));
@@ -126,10 +126,10 @@ fn propagate_hot() {
 
     harness.mouse_move_to(empty);
 
-    assert!(is_hot(&harness, root));
-    assert!(is_hot(&harness, empty));
-    assert!(!is_hot(&harness, button));
-    assert!(!is_hot(&harness, pad));
+    assert!(hovered(&harness, root));
+    assert!(hovered(&harness, empty));
+    assert!(!hovered(&harness, button));
+    assert!(!hovered(&harness, pad));
 
     assert_eq!(next_hot_changed(&root_rec), None);
     assert_eq!(next_hot_changed(&padding_rec), Some(false));
@@ -147,13 +147,13 @@ fn update_hot_on_mouse_leave() {
     let mut harness = TestHarness::create(widget);
 
     harness.mouse_move_to(label_id);
-    assert!(is_hot(&harness, label_id));
+    assert!(hovered(&harness, label_id));
 
     label_rec.clear();
     println!("leaving");
     harness.process_pointer_event(PointerEvent::PointerLeave(PointerState::empty()));
 
-    assert!(!is_hot(&harness, label_id));
+    assert!(!hovered(&harness, label_id));
     assert_eq!(next_hot_changed(&label_rec), Some(false));
 }
 
@@ -202,13 +202,13 @@ fn update_hot_from_layout() {
     let mut harness = TestHarness::create(widget);
 
     harness.mouse_move_to(collapsible_id);
-    assert!(is_hot(&harness, collapsible_id));
-    assert!(!is_hot(&harness, box_id));
+    assert!(hovered(&harness, collapsible_id));
+    assert!(!hovered(&harness, box_id));
 
     box_rec.clear();
     harness.submit_command(COLLAPSE);
-    assert!(!is_hot(&harness, collapsible_id));
-    assert!(is_hot(&harness, box_id));
+    assert!(!hovered(&harness, collapsible_id));
+    assert!(hovered(&harness, box_id));
 
     assert_eq!(next_hot_changed(&box_rec), Some(true));
 }

@@ -87,7 +87,7 @@ impl Widget for Button {
                 }
             }
             PointerEvent::PointerUp(button, _) => {
-                if ctx.has_pointer_capture() && ctx.is_hot() && !ctx.is_disabled() {
+                if ctx.has_pointer_capture() && ctx.hovered() && !ctx.is_disabled() {
                     ctx.submit_action(Action::ButtonPressed(*button));
                     trace!("Button {:?} released", ctx.widget_id());
                 }
@@ -145,10 +145,22 @@ impl Widget for Button {
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
+        let tokens = ctx.get_colortokens();
         let is_active = ctx.has_pointer_capture() && !ctx.is_disabled();
-        let is_hot = ctx.is_hot();
+        let hovered = ctx.hovered();
         let size = ctx.size();
         let stroke_width = theme::BUTTON_BORDER_WIDTH;
+
+        if hovered && !ctx.is_disabled() {
+            ctx.mutate_now(&mut self.label, move |mut label| {
+                label.set_text_brush(tokens.high_contrast_text);
+            });
+        }
+        else {
+            ctx.mutate_now(&mut self.label, move |mut label| {
+                label.set_text_brush(tokens.low_contrast_text);
+            });
+        }
 
         let rounded_rect = size
             .to_rect()
@@ -156,17 +168,17 @@ impl Widget for Button {
             .to_rounded_rect(theme::BUTTON_BORDER_RADIUS);
 
         let bg_gradient = if ctx.is_disabled() {
-            [theme::DISABLED_BUTTON_LIGHT, theme::DISABLED_BUTTON_DARK]
+            [tokens.subtle_background, tokens.ui_element_background]
         } else if is_active {
-            [theme::BUTTON_DARK, theme::BUTTON_LIGHT]
+            [tokens.app_background, tokens.solid_backgrounds]
         } else {
-            [theme::BUTTON_LIGHT, theme::BUTTON_DARK]
+            [tokens.app_background, tokens.ui_element_background]
         };
 
-        let border_color = if is_hot && !ctx.is_disabled() {
-            theme::BORDER_LIGHT
+        let border_color = if hovered && !ctx.is_disabled() {
+            tokens.hovered_ui_element_border
         } else {
-            theme::BORDER_DARK
+            tokens.subtle_borders_and_separators
         };
 
         stroke(scene, &rounded_rect, border_color, stroke_width);

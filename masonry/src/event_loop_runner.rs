@@ -18,6 +18,7 @@ use winit::event::{
 };
 use winit::event_loop::ActiveEventLoop;
 use winit::window::{Window, WindowAttributes, WindowId};
+use xilem_colors::Colorix;
 
 use crate::app_driver::{AppDriver, DriverCtx};
 use crate::dpi::LogicalPosition;
@@ -75,6 +76,7 @@ pub struct MasonryState<'a> {
     render_root: RenderRoot,
     pointer_state: PointerState,
     renderer: Option<Renderer>,
+    colors: Colorix,
     // TODO: Winit doesn't seem to let us create these proxies from within the loop
     // The reasons for this are unclear
     proxy: EventLoopProxy,
@@ -82,7 +84,7 @@ pub struct MasonryState<'a> {
     // Per-Window state
     // In future, this will support multiple windows
     window: WindowState<'a>,
-    background_color: Color,
+    //background_color: Color,
 }
 
 struct MainState<'a> {
@@ -119,7 +121,7 @@ pub fn run(
         window_attributes,
         root_widget,
         app_driver,
-        Color::BLACK,
+        //Color::BLACK,
     )
 }
 
@@ -128,7 +130,7 @@ pub fn run_with(
     window: WindowAttributes,
     root_widget: impl Widget,
     app_driver: impl AppDriver + 'static,
-    background_color: Color,
+    //background_color: Color,
 ) -> Result<(), EventLoopError> {
     // If there is no default tracing subscriber, we set our own. If one has
     // already been set, we get an error which we swallow.
@@ -137,7 +139,7 @@ pub fn run_with(
     let _ = crate::tracing_backend::try_init_tracing();
 
     let mut main_state = MainState {
-        masonry_state: MasonryState::new(window, &event_loop, root_widget, background_color),
+        masonry_state: MasonryState::new(window, &event_loop, root_widget),
         app_driver: Box::new(app_driver),
     };
     main_state
@@ -219,13 +221,15 @@ impl MasonryState<'_> {
         window: WindowAttributes,
         event_loop: &EventLoop,
         root_widget: impl Widget,
-        background_color: Color,
+        //background_color: Color,
     ) -> Self {
         let render_cx = RenderContext::new();
         // TODO: We can't know this scale factor until later?
         let scale_factor = 1.0;
+        let colors = Colorix::init();
 
         MasonryState {
+            colors,
             render_cx,
             render_root: RenderRoot::new(
                 root_widget,
@@ -240,7 +244,7 @@ impl MasonryState<'_> {
             proxy: event_loop.create_proxy(),
 
             window: WindowState::Uninitialized(window),
-            background_color,
+            //background_color,
         }
     }
 
@@ -382,7 +386,7 @@ impl MasonryState<'_> {
             num_init_threads: NonZeroUsize::new(1),
         };
         let render_params = RenderParams {
-            base_color: self.background_color,
+            base_color: self.colors.tokens.app_background,
             width,
             height,
             antialiasing_method: vello::AaConfig::Area,

@@ -99,7 +99,7 @@ fn build_access_node(widget: &dyn Widget, state: &WidgetState, scale_factor: f64
             .collect::<Vec<NodeId>>(),
     );
 
-    if state.is_hot {
+    if state.hovered {
         node.set_hovered();
     }
     if state.is_disabled {

@@ -2051,6 +2051,7 @@ dependencies = [
  "wgpu",
  "winit",
  "xi-unicode",
+ "xilem_colors",
 ]
 
 [[package]]

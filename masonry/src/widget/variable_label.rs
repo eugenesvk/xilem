@@ -389,6 +389,9 @@ impl Widget for VariableLabel {
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
+        // let tokens = ctx.get_colortokens();
+        // self.brush = tokens.text_color().into();
+
         if self.text_layout.needs_rebuild() {
             debug_panic!("Called Label paint before layout");
         }

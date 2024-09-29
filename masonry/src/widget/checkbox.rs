@@ -74,7 +74,7 @@ impl Widget for Checkbox {
                 }
             }
             PointerEvent::PointerUp(_, _) => {
-                if ctx.has_pointer_capture() && ctx.is_hot() && !ctx.is_disabled() {
+                if ctx.has_pointer_capture() && ctx.hovered() && !ctx.is_disabled() {
                     self.checked = !self.checked;
                     ctx.submit_action(Action::CheckboxChecked(self.checked));
                     ctx.request_accessibility_update();
@@ -130,6 +130,7 @@ impl Widget for Checkbox {
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
+        let tokens = ctx.get_colortokens();
         let check_size = theme::BASIC_WIDGET_HEIGHT;
         let border_width = 1.;
 
@@ -141,15 +142,15 @@ impl Widget for Checkbox {
         fill_lin_gradient(
             scene,
             &rect,
-            [theme::BACKGROUND_LIGHT, theme::BACKGROUND_DARK],
+            [tokens.app_background, tokens.ui_element_background],
             UnitPoint::TOP,
             UnitPoint::BOTTOM,
         );
 
-        let border_color = if ctx.is_hot() && !ctx.is_disabled() {
-            theme::BORDER_LIGHT
+        let border_color = if ctx.hovered() && !ctx.is_disabled() {
+            tokens.hovered_ui_element_border
         } else {
-            theme::BORDER_DARK
+            tokens.subtle_borders_and_separators
         };
 
         stroke(scene, &rect, border_color, border_width);
@@ -172,9 +173,9 @@ impl Widget for Checkbox {
             };
 
             let brush = if ctx.is_disabled() {
-                theme::DISABLED_TEXT_COLOR
+                tokens.low_contrast_text
             } else {
-                theme::TEXT_COLOR
+                tokens.solid_backgrounds
             };
 
             scene.stroke(&style, Affine::IDENTITY, brush, None, &path);

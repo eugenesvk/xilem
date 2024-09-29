@@ -307,6 +307,7 @@ impl Widget for Textbox {
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
+        let tokens = ctx.get_colortokens();
         if self.editor.needs_rebuild() {
             debug_panic!("Called Label paint before layout");
         }
@@ -321,12 +322,13 @@ impl Widget for Textbox {
         if self.line_break_mode == LineBreaking::Clip {
             scene.pop_layer();
         }
+        let color = tokens.ui_element_border_and_focus_rings;
         let size = ctx.size();
         let outline_rect = size.to_rect().inset(1.0);
         scene.stroke(
             &Stroke::new(1.0),
             Affine::IDENTITY,
-            Color::WHITE,
+            color,
             None,
             &outline_rect,
         );

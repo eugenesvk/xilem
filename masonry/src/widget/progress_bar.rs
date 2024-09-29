@@ -26,6 +26,7 @@ pub struct ProgressBar {
     /// It is also used if an invalid float (outside of [0, 1]) is passed.
     progress: Option<f64>,
     label: TextLayout<ArcStr>,
+    //label: WidgetPod<Label>,
 }
 
 impl ProgressBar {
@@ -135,6 +136,12 @@ impl Widget for ProgressBar {
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
+        let tokens = ctx.get_colortokens();
+
+        // self.label.set_brush(tokens.text_color());
+        // let (font_ctx, layout_ctx) = ctx.text_contexts();
+        // self.label.rebuild(font_ctx, layout_ctx);
+
         let border_width = 1.;
 
         if self.label.needs_rebuild() {
@@ -169,7 +176,7 @@ impl Widget for ProgressBar {
         fill_lin_gradient(
             scene,
             &progress_rect,
-            [theme::PRIMARY_LIGHT, theme::PRIMARY_DARK],
+            [tokens.solid_backgrounds, tokens.app_background],
             UnitPoint::TOP,
             UnitPoint::BOTTOM,
         );

@@ -7,6 +7,8 @@
 #![windows_subsystem = "windows"]
 #![allow(variant_size_differences, clippy::single_match)]
 
+use std::borrow::BorrowMut;
+
 use accesskit::{DefaultActionVerb, Role};
 use masonry::app_driver::{AppDriver, DriverCtx};
 use masonry::dpi::LogicalSize;
@@ -39,8 +41,7 @@ enum CalcAction {
 struct CalcButton {
     inner: WidgetPod<SizedBox>,
     action: CalcAction,
-    base_color: Color,
-    active_color: Color,
+    is_digit: bool,
 }
 
 // ---
@@ -130,25 +131,26 @@ impl CalcState {
 }
 
 impl CalcButton {
-    fn new(inner: SizedBox, action: CalcAction, base_color: Color, active_color: Color) -> Self {
+    fn new(inner: SizedBox, action: CalcAction, is_digit: bool) -> Self {
         Self {
             inner: WidgetPod::new(inner),
             action,
-            base_color,
-            active_color,
+            is_digit,
         }
     }
 }
 
 impl Widget for CalcButton {
     fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {
+        let colors = ctx.get_colortokens();
         match event {
             PointerEvent::PointerDown(_, _) => {
                 if !ctx.is_disabled() {
-                    let color = self.active_color;
+                    //let color = self.active_color;
                     // See on_status_change for why we use `mutate_later` here.
                     ctx.mutate_later(&mut self.inner, move |mut inner| {
-                        inner.set_background(color);
+                        inner.set_background(colors.solid_backgrounds);
+                        //inner.set_background(Color::BLUE);
                     });
                     ctx.capture_pointer();
                     trace!("CalcButton {:?} pressed", ctx.widget_id());
@@ -156,11 +158,21 @@ impl Widget for CalcButton {
             }
             PointerEvent::PointerUp(_, _) => {
                 if ctx.has_pointer_capture() && !ctx.is_disabled() {
-                    let color = self.base_color;
+                    //let color = self.base_color;
                     // See on_status_change for why we use `mutate_later` here.
-                    ctx.mutate_later(&mut self.inner, move |mut inner| {
-                        inner.set_background(color);
-                    });
+                    if self.is_digit {
+                        ctx.mutate_later(&mut self.inner, move |mut inner| {
+                            inner.set_background(colors.solid_backgrounds);
+                        });
+                    }
+                    else {
+                        ctx.mutate_later(&mut self.inner, move |mut inner| {
+                            inner.set_background(colors.ui_element_background);
+                        });
+                    }
+                    // ctx.mutate_later(&mut self.inner, move |mut inner| {
+                    //     inner.set_background(colors.ui_element_background);
+                    // });
                     ctx.submit_action(Action::Other(Box::new(self.action)));
                     trace!("CalcButton {:?} released", ctx.widget_id());
                 }
@@ -190,18 +202,20 @@ impl Widget for CalcButton {
         // and change its border color. This is a simple way to implement a
         // "hovered" visual effect, but it's somewhat non-idiomatic compared to
         // implementing the effect inside the "paint" method.
+        let tokens = ctx.get_colortokens();
         match event {
-            StatusChange::HotChanged(true) => {
+            StatusChange::HoveredChanged(true) => {
                 ctx.mutate_later(&mut self.inner, move |mut inner| {
-                    inner.set_border(Color::WHITE, 3.0);
+                    inner.set_border(tokens.hovered_ui_element_border, 3.0);
+
                 });
                 // FIXME - This is a monkey-patch for a problem where the mutate pass isn't run after this.
                 // Should be fixed once the pass spec RFC is implemented.
                 ctx.request_anim_frame();
             }
-            StatusChange::HotChanged(false) => {
+            StatusChange::HoveredChanged(false) => {
                 ctx.mutate_later(&mut self.inner, move |mut inner| {
-                    inner.set_border(Color::TRANSPARENT, 3.0);
+                    inner.set_border(tokens.subtle_borders_and_separators, 3.0);
                 });
                 // FIXME - This is a monkey-patch for a problem where the mutate pass isn't run after this.
                 // Should be fixed once the pass spec RFC is implemented.
@@ -222,7 +236,24 @@ impl Widget for CalcButton {
         size
     }
 
-    fn paint(&mut self, _ctx: &mut PaintCtx, _scene: &mut Scene) {}
+    fn paint(&mut self, ctx: &mut PaintCtx, _scene: &mut Scene) {
+        let colors = ctx.get_colortokens();
+        if self.is_digit {
+            ctx.mutate_now(&mut self.inner, move |mut inner| {
+                inner.set_background(colors.ui_element_background);
+            });
+        }
+        else {
+            ctx.mutate_now(&mut self.inner, move |mut inner| {
+                inner.set_background(colors.subtle_background);
+            });
+        }
+        if !ctx.hovered() {
+            ctx.mutate_now(&mut self.inner, move |mut inner| {
+                inner.set_border(colors.subtle_borders_and_separators, 2.);
+            });
+        }
+    }
 
     fn accessibility_role(&self) -> Role {
         Role::Button
@@ -270,16 +301,15 @@ impl AppDriver for CalcState {
 // ---
 
 fn op_button_with_label(op: char, label: String) -> CalcButton {
-    const BLUE: Color = Color::rgb8(0x00, 0x8d, 0xdd);
-    const LIGHT_BLUE: Color = Color::rgb8(0x5c, 0xc4, 0xff);
+    //const BLUE: Color = Color::rgb8(0x00, 0x8d, 0xdd);
+    //const LIGHT_BLUE: Color = Color::rgb8(0x5c, 0xc4, 0xff);
 
     CalcButton::new(
         SizedBox::new(Align::centered(Label::new(label).with_text_size(24.)))
-            .background(BLUE)
+            //.background(Color::GREEN_YELLOW)
             .expand(),
         CalcAction::Op(op),
-        BLUE,
-        LIGHT_BLUE,
+        false,
     )
 }
 
@@ -288,17 +318,15 @@ fn op_button(op: char) -> CalcButton {
 }
 
 fn digit_button(digit: u8) -> CalcButton {
-    const GRAY: Color = Color::rgb8(0x3a, 0x3a, 0x3a);
-    const LIGHT_GRAY: Color = Color::rgb8(0x71, 0x71, 0x71);
+    //const GRAY: Color = Color::rgb8(0x3a, 0x3a, 0x3a);
+    //const LIGHT_GRAY: Color = Color::rgb8(0x71, 0x71, 0x71);
     CalcButton::new(
         SizedBox::new(Align::centered(
             Label::new(format!("{digit}")).with_text_size(24.),
         ))
-        .background(GRAY)
         .expand(),
         CalcAction::Digit(digit),
-        GRAY,
-        LIGHT_GRAY,
+        true,
     )
 }
 

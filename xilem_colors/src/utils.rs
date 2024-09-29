@@ -15,19 +15,19 @@ pub const EGUI_THEME: [ColorPreset; 12] = [
     ColorPreset::Gray,
 ];
 
-pub const GRAYS: [ColorPreset; 12] = [
+pub const OFFICE_GRAY: [ColorPreset; 12] = [
+    ColorPreset::Custom([140, 149, 138]),
+    ColorPreset::Custom([140, 149, 138]),
+    ColorPreset::Custom([140, 149, 138]),
+    ColorPreset::Custom([122, 166, 168]),
     ColorPreset::Gray,
-    ColorPreset::Gray,
-    ColorPreset::Gray,
-    ColorPreset::Gray,
-    ColorPreset::Gray,
-    ColorPreset::Gray,
-    ColorPreset::Gray,
-    ColorPreset::Gray,
-    ColorPreset::Gray,
-    ColorPreset::Gray,
-    ColorPreset::Gray,
-    ColorPreset::Gray,
+    ColorPreset::Custom([122, 166, 168]),
+    ColorPreset::Custom([122, 166, 168]),
+    ColorPreset::Custom([122, 166, 168]),
+    ColorPreset::Custom([59, 71, 97]),
+    ColorPreset::Custom([59, 71, 97]),
+    ColorPreset::Custom([185, 178, 168]),
+    ColorPreset::Custom([185, 178, 168]),
 ];
 
 pub const INDIGO_JADE: [ColorPreset; 12] = [
@@ -105,8 +105,8 @@ pub const SEVENTIES: [ColorPreset; 12] = [
     ColorPreset::Gray,
 ];
 
-pub(crate) const THEMES: [[ColorPreset; 12]; 6] =
-    [EGUI_THEME, INDIGO_JADE, GRASS_BRONZE, WARM, COOL, SEVENTIES];
+pub(crate) const THEMES: [[ColorPreset; 12]; 7] =
+    [EGUI_THEME, INDIGO_JADE, GRASS_BRONZE, WARM, COOL, SEVENTIES, OFFICE_GRAY];
 
 pub(crate) const DROPDOWN_TEXT: [&str; 23] = [
     "Gray", "EguiBlue", "Tomato", "Red", "Ruby", "Crimson", "Pink", "Plum", "Purple", "Violet",

@@ -7,6 +7,23 @@ use peniko::Color;
 //     Color32, Rounding, Stroke,
 // };
 
+//#[derive(Default, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub(crate) enum Token {
+    //#[default]
+    AppBackground,
+    SubtleBackground,
+    UiElementBackground,
+    HoveredUiElementBackground,
+    ActiveUiElementBackground,
+    SubtleBordersAndSeparators,
+    UiElementBorderAndFocusRings,
+    HoveredUiElementBorder,
+    SolidBackgrounds,
+    HoveredSolidBackgrounds,
+    LowContrastText,
+    HighContrastText,
+}
+
 /// The functional UI elements mapped to a scale
 #[derive(Default, Debug, Clone, Copy)]
 pub struct ColorTokens {
@@ -70,6 +87,13 @@ impl ColorTokens {
         }
     }
 
+    pub(crate) fn get_color(&self, token: Token) -> Color {
+        match token {
+            Token::AppBackground => self.app_background,
+            _ => self.solid_backgrounds,
+        }
+    }
+
 }
 
 /// A theme is basically a `[ColorPreset; 12]`.
@@ -109,34 +133,6 @@ pub enum ColorPreset {
 }
 
 impl ColorPreset {
-    // pub(crate) const fn get_rgb(self) -> [u8; 3] {
-    //     match self {
-    //         Self::Gray => [117, 117, 117],
-    //         Self::EguiBlue => [0, 109, 143],
-    //         Self::Tomato => [229, 77, 46],
-    //         Self::Red => [229, 72, 77],
-    //         Self::Ruby => [229, 70, 102],
-    //         Self::Crimson => [233, 61, 130],
-    //         Self::Pink => [214, 64, 159],
-    //         Self::Plum => [171, 74, 186],
-    //         Self::Purple => [142, 78, 198],
-    //         Self::Violet => [110, 86, 207],
-    //         Self::Iris => [91, 91, 214],
-    //         Self::Indigo => [62, 99, 214],
-    //         Self::Blue => [0, 144, 255],
-    //         Self::Cyan => [0, 162, 199],
-    //         Self::Teal => [18, 165, 148],
-    //         Self::Jade => [41, 163, 131],
-    //         Self::Green => [48, 164, 108],
-    //         Self::Grass => [70, 167, 88],
-    //         Self::Brown => [173, 127, 88],
-    //         Self::Bronze => [161, 128, 114],
-    //         Self::Gold => [151, 131, 101],
-    //         Self::Orange => [247, 107, 21],
-    //         Self::Custom(v) => v,
-    //     }
-    // }
-
     pub(crate) fn get_srgb(self) -> LinSrgb<f32> {
         match self {
             Self::Gray => Srgb::new(117, 117, 117).into_linear(),

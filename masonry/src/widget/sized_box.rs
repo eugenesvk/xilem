@@ -358,6 +358,7 @@ impl Widget for SizedBox {
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
+        let colors = ctx.get_colortokens();
         let corner_radius = self.corner_radius;
 
         if let Some(background) = self.background.as_mut() {
@@ -373,6 +374,9 @@ impl Widget for SizedBox {
                 );
             });
         }
+        else {
+            self.background = Some(colors.subtle_background.into());
+        }
 
         if let Some(border) = &self.border {
             let border_width = border.width;
@@ -382,7 +386,16 @@ impl Widget for SizedBox {
                 .inset(border_width / -2.0)
                 .to_rounded_rect(corner_radius);
             stroke(scene, &border_rect, border.color, border_width);
-        };
+        }
+        else {
+            let border = BorderStyle {width: 3., color: colors.subtle_borders_and_separators};
+            let border_rect = ctx
+                .size()
+                .to_rect()
+                .inset(border.width / -2.0)
+                .to_rounded_rect(corner_radius);
+            stroke(scene, &border_rect, border.color, border.width);
+        }
     }
 
     fn accessibility_role(&self) -> Role {

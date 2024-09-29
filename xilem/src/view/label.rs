@@ -48,7 +48,8 @@ impl<State, Action> View<State, Action, ViewCtx> for Label {
     type Element = Pod<widget::Label>;
     type ViewState = ();
 
-    fn build(&self, _ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+        //let tokens = ctx.get_tokens();
         let widget_pod = Pod::new(
             widget::Label::new(self.label.clone())
                 .with_text_brush(self.text_brush.clone())

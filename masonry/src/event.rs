@@ -332,9 +332,9 @@ pub enum StatusChange {
     /// when the mouse moves over a widget, that widget will receive
     /// `StatusChange::HotChanged` before it receives `Event::MouseMove`.
     ///
-    /// See [`is_hot`](crate::EventCtx::is_hot) for
+    /// See [`hovered`](crate::EventCtx::hovered) for
     /// discussion about the hot status.
-    HotChanged(bool),
+    HoveredChanged(bool),
 
     /// Called when the focus status changes.
     ///

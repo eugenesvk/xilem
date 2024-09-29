@@ -3,13 +3,13 @@ use peniko::Color;
 use palette::{num::MulAdd, Darken, FromColor, IntoColor, Lighten, LinSrgb, Okhsl, OklabHue, Srgb};
 
 #[derive(Debug, Default, Clone)]
-pub struct Scales {
+pub(crate) struct Scales {
     //pub custom: Color,
-    pub okhsl: [Okhsl; 12],
-    pub rgbs: [LinSrgb; 12],
-    pub srgb: LinSrgb,
-    pub scale: [Color; 12],
-    pub dark_mode: bool,
+    okhsl: [Okhsl; 12],
+    rgbs: [LinSrgb; 12],
+    srgb: LinSrgb,
+    pub(crate) scale: [Color; 12],
+    pub(crate) dark_mode: bool,
 }
 
 impl Scales {
@@ -18,7 +18,7 @@ impl Scales {
     //     [self.custom.r, self.custom.g, self.custom.b]
     // }
 
-    pub fn process_color(&mut self, v: ColorPreset) {
+    pub(crate) fn process_color(&mut self, v: ColorPreset) {
         self.srgb = v.get_srgb();
         self.draw_scale();
     }
