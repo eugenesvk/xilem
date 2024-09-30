@@ -44,6 +44,20 @@ impl Colorix {
     // fn set_theme(&mut self, theme: [ColorPreset; 12]) {
     //     self.theme = theme
     // }
+    pub fn pick_theme(&mut self, i: usize) {
+        self.theme = THEMES[i];
+        self.update_colors();
+    }
+
+    pub fn invert_mode(&mut self) {
+        if self.dark_mode {
+            self.dark_mode = false
+        }
+        else {
+            self.dark_mode = true
+        }
+        self.update_colors();
+    }
 
     fn get_theme_index(&mut self) {
         if let Some(i) = THEMES.iter().position(|t| t == &self.theme) {
