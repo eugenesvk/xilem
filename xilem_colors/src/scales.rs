@@ -161,11 +161,11 @@ impl Scales {
             self.okhsl[i] = hsl.lighten(lighten_values[i - 9]);
             if (0.0..=90.).contains(&hue) | (300.0..=350.).contains(&hue) {
                 self.okhsl[i].hue =
-                    OklabHue::new(2.0f32.mul_add((i - 8) as f32, hsl.hue.into_inner()));
+                    OklabHue::new(2.0_f32.mul_add((i - 8) as f32, hsl.hue.into_inner()));
             }
             if (100.0..=280.).contains(&hue) {
                 self.okhsl[i].hue = OklabHue::new(
-                    2.0f32.mul_add(-((i - 8) as f32), self.okhsl[i].hue.into_inner()),
+                    2.0_f32.mul_add(-((i - 8) as f32), self.okhsl[i].hue.into_inner()),
                 );
             }
         }

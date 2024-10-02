@@ -80,6 +80,6 @@ fn main() -> Result<(), EventLoopError> {
         history: String::new(),
     };
     let app = Xilem::new(app_data, app_logic);
-    app.run_windowed(EventLoop::with_user_event(), "Centered Flex".into())?;
+    app.run_windowed(EventLoop::with_user_event(), "State Machine".into())?;
     Ok(())
 }

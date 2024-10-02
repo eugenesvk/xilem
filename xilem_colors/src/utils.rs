@@ -108,32 +108,32 @@ pub const SEVENTIES: [ColorPreset; 12] = [
 pub(crate) const THEMES: [[ColorPreset; 12]; 7] =
     [EGUI_THEME, INDIGO_JADE, GRASS_BRONZE, WARM, COOL, SEVENTIES, OFFICE_GRAY];
 
-pub(crate) const DROPDOWN_TEXT: [&str; 23] = [
-    "Gray", "EguiBlue", "Tomato", "Red", "Ruby", "Crimson", "Pink", "Plum", "Purple", "Violet",
-    "Iris", "Indigo", "Blue", "Cyan", "Teal", "Jade", "Green", "Grass", "Brown", "Bronze", "Gold",
-    "Orange", "Custom",
-];
+// pub(crate) const DROPDOWN_TEXT: [&str; 23] = [
+//     "Gray", "EguiBlue", "Tomato", "Red", "Ruby", "Crimson", "Pink", "Plum", "Purple", "Violet",
+//     "Iris", "Indigo", "Blue", "Cyan", "Teal", "Jade", "Green", "Grass", "Brown", "Bronze", "Gold",
+//     "Orange", "Custom",
+// ];
 
-pub(crate) const LABELS: [&str; 12] = [
-    "app background",
-    "subtle background",
-    "ui element background",
-    "hovered ui element background",
-    "active ui element background",
-    "subtle borders and separators",
-    "ui element border and focus rings",
-    "hovered ui element border",
-    "solid backgrounds",
-    "hovered solid backgrounds",
-    "low contrast text",
-    "high contrast text",
-];
+// pub(crate) const LABELS: [&str; 12] = [
+//     "app background",
+//     "subtle background",
+//     "ui element background",
+//     "hovered ui element background",
+//     "active ui element background",
+//     "subtle borders and separators",
+//     "ui element border and focus rings",
+//     "hovered ui element border",
+//     "solid backgrounds",
+//     "hovered solid backgrounds",
+//     "low contrast text",
+//     "high contrast text",
+// ];
 
-pub(crate) const THEME_NAMES: [&str; 6] = [
-    "Egui",
-    "Indigo/jade",
-    "Grass/bronze",
-    "Warm",
-    "Cool",
-    "Seventies",
-];
+// pub(crate) const THEME_NAMES: [&str; 6] = [
+//     "Egui",
+//     "Indigo/jade",
+//     "Grass/bronze",
+//     "Warm",
+//     "Cool",
+//     "Seventies",
+// ];

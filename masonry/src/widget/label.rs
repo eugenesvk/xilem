@@ -11,6 +11,7 @@ use tracing::{trace, trace_span, Span};
 use vello::kurbo::{Affine, Point, Size};
 use vello::peniko::BlendMode;
 use vello::Scene;
+use xilem_colors::tokens::Token;
 
 use crate::text::{TextBrush, TextLayout};
 use crate::widget::WidgetMut;
@@ -44,6 +45,7 @@ pub struct Label {
     show_disabled: bool,
     brush: TextBrush,
     skip_pointer: bool,
+    token: Option<Token>
 }
 
 // --- MARK: BUILDERS ---
@@ -56,6 +58,7 @@ impl Label {
             show_disabled: true,
             brush: crate::theme::TEXT_COLOR.into(),
             skip_pointer: false,
+            token: None,
         }
     }
 
@@ -73,6 +76,11 @@ impl Label {
     #[doc(alias = "with_text_color")]
     pub fn with_text_brush(mut self, brush: impl Into<TextBrush>) -> Self {
         self.text_layout.set_brush(brush);
+        self
+    }
+
+    pub fn set_token(mut self, token: Option<Token>) -> Self {
+        self.token = token;
         self
     }
 
@@ -118,6 +126,10 @@ impl WidgetMut<'_, Label> {
             self.ctx.request_layout();
         }
         ret
+    }
+
+    pub fn set_token(&mut self, token: Option<Token>) {
+        self.widget.token = token;
     }
 
     pub fn set_text(&mut self, new_text: impl Into<ArcStr>) {
@@ -191,12 +203,13 @@ impl Widget for Label {
     }
 
     fn lifecycle(&mut self, ctx: &mut LifeCycleCtx, event: &LifeCycle) {
+        let tokens = ctx.get_colortokens();
         match event {
             LifeCycle::DisabledChanged(disabled) => {
                 if self.show_disabled {
                     if *disabled {
                         self.text_layout
-                            .set_brush(crate::theme::DISABLED_TEXT_COLOR);
+                            .set_brush(tokens.low_contrast_text);
                     } else {
                         self.text_layout.set_brush(self.brush.clone());
                     }
@@ -243,6 +256,15 @@ impl Widget for Label {
 
     fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
         let tokens = ctx.get_colortokens();
+        if let Some(token) = self.token {
+            self.text_layout.set_brush(tokens.set_token(token));
+        }
+        else {
+            self.text_layout.set_brush(tokens.low_contrast_text);
+        }
+        // self.text_layout.set_brush(tokens.low_contrast_text);
+        let (font_ctx, layout_ctx) = ctx.text_contexts();
+        self.text_layout.rebuild(font_ctx, layout_ctx);
 
         if self.text_layout.needs_rebuild() {
             debug_panic!("Called Label paint before layout");
@@ -251,13 +273,6 @@ impl Widget for Label {
             let clip_rect = ctx.size().to_rect();
             scene.push_layer(BlendMode::default(), 1., Affine::IDENTITY, &clip_rect);
         }
-        // self.brush = if ctx.hovered() && !ctx.is_disabled() {tokens.high_contrast_text.into()}
-        // else {tokens.low_contrast_text.into()};
-        // self.text_layout.set_brush(self.brush.clone());
-
-        // let (font_ctx, layout_ctx) = ctx.text_contexts();
-        // self.text_layout.rebuild(font_ctx, layout_ctx);
-        self.brush = tokens.text_color().into();
 
         self.text_layout
             .draw(scene, Point::new(LABEL_X_PADDING, 0.0));

@@ -8,16 +8,6 @@ use tokens::{ColorPreset, ColorTokens};
 use utils::THEMES;
 
 
-
-// #[derive(Debug, Clone)]
-// pub struct Theme([ColorPreset; 12]);
-
-// impl std::default::Default for Theme {
-//     fn default() -> Self {
-//         Self(THEMES[1])
-//     }
-// }
-
 #[derive(Debug, Default, Clone)]
 pub struct Colorix {
     pub tokens: ColorTokens,
@@ -50,12 +40,7 @@ impl Colorix {
     }
 
     pub fn invert_mode(&mut self) {
-        if self.dark_mode {
-            self.dark_mode = false
-        }
-        else {
-            self.dark_mode = true
-        }
+        self.dark_mode = !self.dark_mode;
         self.update_colors();
     }
 
@@ -93,7 +78,7 @@ impl Colorix {
     fn update_colors(&mut self) {
         self.scales.dark_mode = self.dark_mode;
         self.process_theme();
-        //self.tokens.set_text_color();
+        self.tokens.set_text_color();
     }
 
 

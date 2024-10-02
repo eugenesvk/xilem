@@ -152,12 +152,12 @@ impl Widget for Button {
         let stroke_width = theme::BUTTON_BORDER_WIDTH;
 
         if hovered && !ctx.is_disabled() {
-            ctx.mutate_now(&mut self.label, move |mut label| {
+            ctx.mutate(&mut self.label, move |mut label| {
                 label.set_text_brush(tokens.high_contrast_text);
             });
         }
         else {
-            ctx.mutate_now(&mut self.label, move |mut label| {
+            ctx.mutate(&mut self.label, move |mut label| {
                 label.set_text_brush(tokens.low_contrast_text);
             });
         }

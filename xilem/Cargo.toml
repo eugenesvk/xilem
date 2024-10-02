@@ -76,6 +76,7 @@ crate-type = ["cdylib"]
 workspace = true
 
 [dependencies]
+xilem_colors.workspace = true
 xilem_core.workspace = true
 masonry.workspace = true
 winit.workspace = true

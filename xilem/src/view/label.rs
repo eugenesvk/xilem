@@ -3,6 +3,7 @@
 
 use masonry::{text::TextBrush, widget, ArcStr};
 use xilem_core::{Mut, ViewMarker};
+use xilem_colors::tokens::Token;
 
 use crate::{Color, MessageResult, Pod, TextAlignment, View, ViewCtx, ViewId};
 
@@ -12,6 +13,7 @@ pub fn label(label: impl Into<ArcStr>) -> Label {
         text_brush: Color::WHITE.into(),
         alignment: TextAlignment::default(),
         text_size: masonry::theme::TEXT_SIZE_NORMAL as f32,
+        token: None
     }
 }
 
@@ -21,6 +23,7 @@ pub struct Label {
     text_brush: TextBrush,
     alignment: TextAlignment,
     text_size: f32,
+    token: Option<Token>
     // TODO: add more attributes of `masonry::widget::Label`
 }
 
@@ -28,6 +31,11 @@ impl Label {
     #[doc(alias = "color")]
     pub fn brush(mut self, brush: impl Into<TextBrush>) -> Self {
         self.text_brush = brush.into();
+        self
+    }
+
+    pub fn set_token(mut self, token: Option<Token>) -> Self {
+        self.token = token;
         self
     }
 
@@ -49,12 +57,12 @@ impl<State, Action> View<State, Action, ViewCtx> for Label {
     type ViewState = ();
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
-        //let tokens = ctx.get_tokens();
-        let widget_pod = Pod::new(
+        let widget_pod = ctx.new_pod(
             widget::Label::new(self.label.clone())
                 .with_text_brush(self.text_brush.clone())
                 .with_text_alignment(self.alignment)
-                .with_text_size(self.text_size),
+                .with_text_size(self.text_size)
+                .set_token(self.token),
         );
         (widget_pod, ())
     }
@@ -80,6 +88,10 @@ impl<State, Action> View<State, Action, ViewCtx> for Label {
         }
         if prev.text_size != self.text_size {
             element.set_text_size(self.text_size);
+            ctx.mark_changed();
+        }
+        if prev.token != self.token {
+            element.set_token(self.token);
             ctx.mark_changed();
         }
         element

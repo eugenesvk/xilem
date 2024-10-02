@@ -78,6 +78,15 @@ impl<'a> EventCtx<'a> {
     pub fn get_colortokens(&self) -> ColorTokens {
         self.global_state.colors.tokens
     }
+
+    pub fn switch_theme(&mut self, i: usize) {
+        self.global_state.colors.pick_theme(i);
+    }
+
+    pub fn invert_mode(&mut self) {
+        self.global_state.colors.invert_mode();
+        self.request_paint();
+    }
 }
 
 /// A context provided to the [`Widget::register_children`] method on widgets.
@@ -575,7 +584,7 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, LifeCycleCtx<'_>, {
 
 impl_context_method!(
     PaintCtx<'_>,{
-        pub fn mutate_now<W: Widget>(
+        pub fn mutate<W: Widget>(
             &mut self,
             child: &mut WidgetPod<W>,
             f: impl FnOnce(WidgetMut<'_, W>) + Send + 'static,
@@ -586,16 +595,16 @@ impl_context_method!(
             };
             self.global_state.mutate_callbacks.push(callback);
         }
-        pub fn mutate_self_now(
-            &mut self,
-            f: impl FnOnce(WidgetMut<'_, Box<dyn Widget>>) + Send + 'static,
-        ) {
-            let callback = MutateCallback {
-                id: self.widget_state.id,
-                callback: Box::new(f),
-            };
-            self.global_state.mutate_callbacks.push(callback);
-        }
+        // pub fn mutate_self_now(
+        //     &mut self,
+        //     f: impl FnOnce(WidgetMut<'_, Box<dyn Widget>>) + Send + 'static,
+        // ) {
+        //     let callback = MutateCallback {
+        //         id: self.widget_state.id,
+        //         callback: Box::new(f),
+        //     };
+        //     self.global_state.mutate_callbacks.push(callback);
+        // }
     }
 );
 

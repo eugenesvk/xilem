@@ -12,6 +12,7 @@ use masonry::widget::{Button, Grid, GridParams, Prose, RootWidget, SizedBox};
 use masonry::{Action, Color, PointerButton, WidgetId};
 use parley::layout::Alignment;
 use winit::window::Window;
+use xilem_colors::tokens::Token;
 
 struct Driver {
     grid_spacing: f64,
@@ -32,6 +33,8 @@ impl AppDriver for Driver {
                 .get_element()
                 .set_spacing(self.grid_spacing);
         }
+        if let Action::CheckboxChecked(_) = action {
+        }
     }
 }
 
@@ -48,7 +51,7 @@ pub fn main() {
             .with_text_size(14.0)
             .with_text_alignment(Alignment::Middle),
     )
-    .border(Color::rgb8(40, 40, 80), 1.0);
+    .border(None, 5.0);
     let button_inputs = vec![
         GridParams {
             x: 0,

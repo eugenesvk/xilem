@@ -9,7 +9,7 @@ use winit::error::EventLoopError;
 use winit::window::Window;
 use xilem::core::adapt;
 use xilem::view::{button, checkbox, flex, flex_item, progress_bar, sized_box, Axis, FlexSpacer};
-use xilem::{Color, WidgetView, Xilem};
+use xilem::{WidgetView, Xilem};
 
 const SPACER_WIDTH: f64 = 10.;
 
@@ -63,6 +63,7 @@ fn border_box<State: 'static, Action: 'static>(
    // .border(Color::WHITE, 2.)
     .width(450.)
     .height(200.)
+    .rounded(15.)
 }
 
 /// Top-level view
@@ -82,7 +83,7 @@ fn app_logic(data: &mut WidgetGallery) -> impl WidgetView<WidgetGallery> {
         .gap(SPACER_WIDTH)
         .direction(Axis::Horizontal),
     )
-    .border(Color::TRANSPARENT, SPACER_WIDTH)
+    //.border(Color::TRANSPARENT, SPACER_WIDTH)
 }
 
 fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {

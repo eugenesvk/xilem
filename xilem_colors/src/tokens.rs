@@ -1,15 +1,11 @@
 use crate::apca::estimate_lc;
-use palette::{LinSrgb, Srgb};
+use palette::{LinSrgb, Okhsl, Srgb, FromColor, IntoColor};
 use peniko::Color;
-// use egui::{
-//     self,
-//     style::{TextCursorStyle, WidgetVisuals},
-//     Color32, Rounding, Stroke,
-// };
 
-//#[derive(Default, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
-pub(crate) enum Token {
-    //#[default]
+
+#[derive(Default, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub enum Token {
+    #[default]
     AppBackground,
     SubtleBackground,
     UiElementBackground,
@@ -22,6 +18,9 @@ pub(crate) enum Token {
     HoveredSolidBackgrounds,
     LowContrastText,
     HighContrastText,
+    AccentText,
+    Transparent,
+    Custom(Color),
 }
 
 /// The functional UI elements mapped to a scale
@@ -44,18 +43,26 @@ pub struct ColorTokens {
 }
 
 impl ColorTokens {
-    // pub(crate) fn set_text_color(&mut self) {
-    //     let lc = estimate_lc(Color::WHITE, self.solid_backgrounds);
-    //     if lc > -46. {
-    //         self.inverse_color = true;
-    //         let mut hsva: egui::ecolor::Hsva = self.solid_backgrounds.into();
-    //         hsva.s = 0.7;
-    //         hsva.v = 0.01;
-    //         self.text_color = hsva.into();
-    //     } else {
-    //         self.text_color = Color::WHITE;
-    //     }
-    // }
+    pub(crate) fn set_text_color(&mut self) {
+        let white = Srgb::<u8>::from_components((255, 255, 255));
+        let bg = self.solid_backgrounds;
+        let bg_cl = Srgb::<u8>::from_components((bg.r, bg.g, bg.b));
+  
+        let lc = estimate_lc(white, bg_cl);
+        if lc > -46. {
+            self.inverse_color = true;
+            let s = self.solid_backgrounds;
+            let inverse = LinSrgb::from_components((s.r, s.g, s.b)).into_format();
+            let mut okhsl = Okhsl::from_color(inverse);
+
+            okhsl.lightness = 0.01;
+            okhsl.saturation = 0.7;
+            let (r, g, b) = Srgb::from_linear(okhsl.into_color()).into();
+            self.text_color = Color::rgb8(r, g, b);
+        } else {
+            self.text_color = Color::WHITE;
+        }
+    }
 
     /// the color for the text on accented color (solid backgrounds)
     #[must_use]
@@ -87,23 +94,28 @@ impl ColorTokens {
         }
     }
 
-    pub(crate) fn get_color(&self, token: Token) -> Color {
+    pub fn set_token(&self, token: Token) -> Color {
         match token {
             Token::AppBackground => self.app_background,
-            _ => self.solid_backgrounds,
+            Token::SubtleBackground => self.subtle_background,
+            Token::UiElementBackground => self.ui_element_background,
+            Token::HoveredUiElementBackground => self.hovered_ui_element_background,
+            Token::ActiveUiElementBackground => self.active_ui_element_background,
+            Token::SubtleBordersAndSeparators => self.subtle_borders_and_separators,
+            Token::UiElementBorderAndFocusRings => self.ui_element_border_and_focus_rings,
+            Token::HoveredUiElementBorder => self.hovered_ui_element_border,
+            Token::SolidBackgrounds => self.solid_backgrounds,
+            Token::HoveredSolidBackgrounds => self.hovered_solid_backgrounds,
+            Token::LowContrastText => self.low_contrast_text,
+            Token::HighContrastText => self.high_contrast_text,
+            Token::AccentText => self.text_color(),
+            Token::Custom(color) => color,
+            Token::Transparent => Color::TRANSPARENT,
+            
         }
     }
-
 }
 
-/// A theme is basically a `[ColorPreset; 12]`.
-///
-/// # Examples
-/// ```
-/// use egui_colors::tokens::ColorPreset;
-/// let mut my_theme = [ColorPreset::Indigo; 12];
-/// my_theme[11] = ColorPreset::Custom([23, 45, 77]);
-/// ```
 #[derive(Default, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum ColorPreset {
     #[default]

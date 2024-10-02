@@ -8,10 +8,12 @@ use vello::kurbo::RoundedRectRadii;
 use vello::peniko::{Brush, Color};
 use xilem_core::ViewMarker;
 
+
 use crate::{
     core::{Mut, View, ViewId},
     Pod, ViewCtx, WidgetView,
 };
+use xilem_colors::tokens::Token;
 
 /// A widget with predefined size.
 ///
@@ -27,7 +29,9 @@ where
         height: None,
         width: None,
         background: None,
-        border: None,
+        //border: None,
+        border_color: None,
+        border_width: 0.,
         corner_radius: RoundedRectRadii::from_single_radius(0.0),
         phantom: PhantomData,
     }
@@ -38,7 +42,9 @@ pub struct SizedBox<V, State, Action = ()> {
     width: Option<f64>,
     height: Option<f64>,
     background: Option<Brush>,
-    border: Option<BorderStyle>,
+    border_color: Option<Token>,
+    border_width: f64,
+    //border: Option<BorderStyle>,
     corner_radius: RoundedRectRadii,
     phantom: PhantomData<fn() -> (State, Action)>,
 }
@@ -98,11 +104,9 @@ impl<V, State, Action> SizedBox<V, State, Action> {
     }
 
     /// Builder-style method for painting a border around the widget with a color and width.
-    pub fn border(mut self, color: impl Into<Color>, width: impl Into<f64>) -> Self {
-        self.border = Some(BorderStyle {
-            color: color.into(),
-            width: width.into(),
-        });
+    pub fn border(mut self, color: Option<Token>, width: impl Into<f64>) -> Self {
+        self.border_color = color;
+        self.border_width = width.into();
         self
     }
 
@@ -132,8 +136,8 @@ where
         if let Some(background) = &self.background {
             widget = widget.background(background.clone());
         }
-        if let Some(border) = &self.border {
-            widget = widget.border(border.color, border.width);
+        if let Some(_) = &self.border_color {
+            widget = widget.border(self.border_color, self.border_width);
         }
         (ctx.new_pod(widget), child_state)
     }
@@ -163,9 +167,9 @@ where
                 None => element.clear_background(),
             }
         }
-        if self.border != prev.border {
-            match &self.border {
-                Some(border) => element.set_border(border.color, border.width),
+        if self.border_color != prev.border_color {
+            match &self.border_color {
+                Some(border) => element.set_border(Some(*border), self.border_width),
                 None => element.clear_border(),
             }
         }
@@ -207,7 +211,7 @@ where
 
 /// Something that can be used as the border for a widget.
 #[derive(PartialEq)]
-struct BorderStyle {
+struct _BorderStyle {
     width: f64,
     color: Color,
 }

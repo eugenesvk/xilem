@@ -131,6 +131,17 @@ impl Widget for Checkbox {
 
     fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
         let tokens = ctx.get_colortokens();
+
+        if ctx.hovered() && !ctx.is_disabled() {
+            ctx.mutate(&mut self.label, move |mut label| {
+                label.set_text_brush(tokens.high_contrast_text);
+            });
+        }
+        else {
+            ctx.mutate(&mut self.label, move |mut label| {
+                label.set_text_brush(tokens.low_contrast_text);
+            });
+        }
         let check_size = theme::BASIC_WIDGET_HEIGHT;
         let border_width = 1.;
 
