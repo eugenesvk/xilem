@@ -13,6 +13,7 @@ pub(crate) struct Scales {
 }
 
 impl Scales {
+    // TODO Xilem Okhsl colorpicker
     // convert chosen color from colorpicker
     // pub fn custom(&self) -> [u8; 3] {
     //     [self.custom.r, self.custom.g, self.custom.b]
@@ -31,10 +32,11 @@ impl Scales {
         }
     }
 
+    // ------------------------------------------------------------------- //
+    // ---- input value in egui color picker clamped to useable values --- //
+    // ------------------------------------------------------------------- //
+
     // pub fn clamp_custom(&mut self) {
-    //     // --------
-    //     // ---- input value in color picker clamped to useable values---
-    //     // ----------------------------------------------
     //     let v_clamp = match self.custom.s {
     //         (0.0..=0.3) => ((0.0 - 0.13) / (0.3 - 0.0)).mul_add(self.custom.s - 0.0, 0.13),
     //         (0.3..=1.0) => ((0.13 - 0.0) / (1.0 - 0.3)).mul_add(self.custom.s - 0.3, 0.0),

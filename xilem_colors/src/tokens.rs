@@ -110,8 +110,7 @@ impl ColorTokens {
             Token::HighContrastText => self.high_contrast_text,
             Token::AccentText => self.text_color(),
             Token::Custom(color) => color,
-            Token::Transparent => Color::TRANSPARENT,
-            
+            Token::Transparent => Color::TRANSPARENT,         
         }
     }
 }
