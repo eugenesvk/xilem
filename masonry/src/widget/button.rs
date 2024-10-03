@@ -146,40 +146,47 @@ impl Widget for Button {
 
     fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
         let tokens = ctx.get_colortokens();
-        let is_active = ctx.has_pointer_capture() && !ctx.is_disabled();
+        let is_active = ctx.has_pointer_capture(); // && !ctx.is_disabled();
         let hovered = ctx.hovered();
         let size = ctx.size();
-        let stroke_width = theme::BUTTON_BORDER_WIDTH;
+        //let stroke_width = theme::BUTTON_BORDER_WIDTH;
+        let (border_color, stroke_width) = if hovered && !ctx.is_disabled() {
+            (tokens.hovered_ui_element_border, 3.)
+        } else {
+            (tokens.subtle_borders_and_separators, 1.)
+        };
 
-        if hovered && !ctx.is_disabled() {
-            ctx.mutate(&mut self.label, move |mut label| {
-                label.set_text_brush(tokens.high_contrast_text);
-            });
+        let txt_color = if is_active {
+            tokens.text_color()
+        }
+        else if hovered {
+            tokens.high_contrast_text
         }
         else {
-            ctx.mutate(&mut self.label, move |mut label| {
-                label.set_text_brush(tokens.low_contrast_text);
-            });
-        }
+            tokens.low_contrast_text
+        };
+        ctx.mutate(&mut self.label, move |mut label| {
+            label.set_text_brush(txt_color);
+        });
 
         let rounded_rect = size
             .to_rect()
             .inset(-stroke_width / 2.0)
             .to_rounded_rect(theme::BUTTON_BORDER_RADIUS);
 
-        let bg_gradient = if ctx.is_disabled() {
-            [tokens.subtle_background, tokens.ui_element_background]
-        } else if is_active {
+        let bg_gradient = if is_active {
             [tokens.app_background, tokens.solid_backgrounds]
+        } else if hovered {
+                [tokens.subtle_background, tokens.ui_element_background]
         } else {
-            [tokens.app_background, tokens.ui_element_background]
+            [tokens.app_background, tokens.subtle_background]
         };
 
-        let border_color = if hovered && !ctx.is_disabled() {
-            tokens.hovered_ui_element_border
-        } else {
-            tokens.subtle_borders_and_separators
-        };
+        // let (border_color, stroke_width) = if hovered && !ctx.is_disabled() {
+        //     (tokens.hovered_ui_element_border, 3.)
+        // } else {
+        //     (tokens.subtle_borders_and_separators, 1.)
+        // };
 
         stroke(scene, &rounded_rect, border_color, stroke_width);
         fill_lin_gradient(
