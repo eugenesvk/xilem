@@ -12,7 +12,7 @@ use masonry::widget::{Button, Grid, GridParams, Prose, RootWidget, SizedBox};
 use masonry::{Action, Color, PointerButton, WidgetId};
 use parley::layout::Alignment;
 use winit::window::Window;
-use xilem_colors::tokens::Token;
+use xilem_colors::tokens::TokenColor;
 
 struct Driver {
     grid_spacing: f64,
@@ -51,7 +51,7 @@ pub fn main() {
             .with_text_size(14.0)
             .with_text_alignment(Alignment::Middle),
     )
-    .border(None, 5.0);
+    .border(Some(TokenColor::Transparent), 0.0);
     let button_inputs = vec![
         GridParams {
             x: 0,

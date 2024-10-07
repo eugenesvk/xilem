@@ -6,7 +6,7 @@ pub mod utils;
 use scales::Scales;
 use tokens::{ColorPreset, ColorTokens};
 use utils::THEMES;
-use xilem_core::{View, ViewMarker};
+//use xilem_core::{View, ViewMarker};
 
 
 #[derive(Debug, Default, Clone)]
@@ -22,7 +22,7 @@ impl Colorix {
     pub fn init() -> Self {
         let theme = THEMES[6];
         let mut colorix = Self {
-            dark_mode: false,
+            dark_mode: true,
             theme,
             ..Default::default()
         };
@@ -68,6 +68,7 @@ impl Colorix {
                 }
             }
         }
+        self.tokens.color_on_accent()
     }
 
     fn _update_color(&mut self, i: usize) {
@@ -79,10 +80,26 @@ impl Colorix {
     fn update_colors(&mut self) {
         self.scales.dark_mode = self.dark_mode;
         self.process_theme();
-        self.tokens.set_text_color();
+        //self.tokens.color_on_accent();
     }
 
+    fn _message(&mut self, m: ColorixMessage) {
+        match m {
+            ColorixMessage::SwitchTheme(i) => match i {
+                0..7 => self.pick_theme(i),
+                _ => ()
+            }
+            ColorixMessage::DarkMode => self.dark_mode = true,
+            ColorixMessage::LightMode => self.dark_mode = false,
+            
+        }
+    }
+}
 
+pub enum ColorixMessage {
+    SwitchTheme(usize),
+    DarkMode,
+    LightMode,
 }
 
 // impl ViewMarker for Colorix {}

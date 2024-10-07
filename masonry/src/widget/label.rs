@@ -255,14 +255,13 @@ impl Widget for Label {
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
-        let tokens = ctx.get_colortokens();
+        let colors = ctx.get_colortokens();
         if let Some(token) = self.token {
-            self.text_layout.set_brush(tokens.set_token(token));
+            self.text_layout.set_brush(colors.set_token(token));
         }
         else {
-            self.text_layout.set_brush(tokens.low_contrast_text);
+            self.text_layout.set_brush(colors.low_contrast_text);
         }
-        // self.text_layout.set_brush(tokens.low_contrast_text);
         let (font_ctx, layout_ctx) = ctx.text_contexts();
         self.text_layout.rebuild(font_ctx, layout_ctx);
 

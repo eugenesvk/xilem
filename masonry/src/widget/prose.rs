@@ -265,7 +265,6 @@ impl Widget for Prose {
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
-        let tokens = ctx.get_colortokens();
         if self.text_layout.needs_rebuild() {
             debug_panic!("Called Label paint before layout");
         }
@@ -273,7 +272,6 @@ impl Widget for Prose {
             let clip_rect = ctx.size().to_rect();
             scene.push_layer(BlendMode::default(), 1., Affine::IDENTITY, &clip_rect);
         }
-        self.brush = tokens.text_color().into();
         self.text_layout
             .draw(scene, Point::new(LABEL_X_PADDING, 0.0));
 

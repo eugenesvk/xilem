@@ -7,6 +7,7 @@ use accesskit::{DefaultActionVerb, NodeBuilder, Role};
 use smallvec::{smallvec, SmallVec};
 use tracing::{trace, trace_span, Span};
 use vello::Scene;
+use xilem_colors::tokens::TokenColor;
 
 use crate::action::Action;
 use crate::event::PointerButton;
@@ -73,9 +74,6 @@ impl WidgetMut<'_, Button> {
 
     pub fn label_mut(&mut self) -> WidgetMut<'_, Label> {
         self.ctx.get_mut(&mut self.widget.label)
-    }
-    pub fn set_text_color(&mut self, new_color: impl Into<TextBrush>) {
-        self.label_mut().set_text_brush(new_color);
     }
 }
 
@@ -150,27 +148,26 @@ impl Widget for Button {
 
     fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
         let tokens = ctx.get_colortokens();
-        let is_active = ctx.has_pointer_capture(); // && !ctx.is_disabled();
+        let is_active = ctx.has_pointer_capture();
         let hovered = ctx.hovered();
         let size = ctx.size();
-        //let stroke_width = theme::BUTTON_BORDER_WIDTH;
         let (border_color, stroke_width) = if hovered && !ctx.is_disabled() {
             (tokens.hovered_ui_element_border, 3.)
         } else {
             (tokens.subtle_borders_and_separators, 1.)
         };
-
-        let txt_color = if is_active {
-            tokens.text_color()
+        let token = if is_active {
+            TokenColor::AccentText
         }
         else if hovered {
-            tokens.high_contrast_text
+            TokenColor::HighContrastText
         }
         else {
-            tokens.low_contrast_text
+            TokenColor::LowContrastText
         };
         ctx.mutate(&mut self.label, move |mut label| {
-            label.set_text_brush(txt_color);
+            label.set_token(Some(token));
+            label.ctx.request_paint();
         });
 
         let rounded_rect = size
@@ -185,12 +182,6 @@ impl Widget for Button {
         } else {
             [tokens.app_background, tokens.subtle_background]
         };
-
-        // let (border_color, stroke_width) = if hovered && !ctx.is_disabled() {
-        //     (tokens.hovered_ui_element_border, 3.)
-        // } else {
-        //     (tokens.subtle_borders_and_separators, 1.)
-        // };
 
         stroke(scene, &rounded_rect, border_color, stroke_width);
         fill_lin_gradient(

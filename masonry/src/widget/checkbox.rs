@@ -46,6 +46,7 @@ impl Checkbox {
 impl WidgetMut<'_, Checkbox> {
     pub fn set_checked(&mut self, checked: bool) {
         self.widget.checked = checked;
+        self.ctx.invert_mode();
         self.ctx.request_paint();
         self.ctx.request_accessibility_update();
     }
@@ -69,7 +70,7 @@ impl Widget for Checkbox {
             PointerEvent::PointerDown(_, _) => {
                 if !ctx.is_disabled() {
                     ctx.capture_pointer();
-                    ctx.request_paint();
+                    //ctx.request_paint();
                     trace!("Checkbox {:?} pressed", ctx.widget_id());
                 }
             }

@@ -8,14 +8,14 @@ use crate::action::Action;
 use crate::widget::WidgetMut;
 
 use crate::{
-    theme, AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, LifeCycleCtx, PaintCtx, PointerButton, PointerEvent, RegisterCtx, StatusChange, TextEvent, Widget, WidgetId, WidgetPod
+    theme, AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, LifeCycleCtx, PaintCtx, PointerButton, PointerEvent, RegisterCtx, StatusChange, TextEvent, Widget, WidgetId, WidgetPod, ArcStr
 };
 
-use super::Button;
+use super::Label;
 
 /// A button that switches between Dark and Light mode.
 pub struct LightDarkSwitch {
-    button: WidgetPod<Button>,
+    label: WidgetPod<Label>,
     dark_mode: bool,
 }
 
@@ -23,7 +23,7 @@ impl LightDarkSwitch {
     /// Create a new `Switch`.
     pub fn new() -> LightDarkSwitch {
         LightDarkSwitch {
-            button: WidgetPod::new(Button::new("")),
+            label: WidgetPod::new(Label::new("Switch to DARK mode").with_skip_pointer(true)),
             dark_mode: true
         }
     }
@@ -33,8 +33,24 @@ impl LightDarkSwitch {
 impl WidgetMut<'_, LightDarkSwitch> {
     pub fn switch_mode(&mut self, dark_mode: bool) {
         self.widget.dark_mode = dark_mode;
+        if self.widget.dark_mode {
+            self.set_text("Switch to LIGHT mode".into());
+        }
+        else {
+            self.set_text("Switch to DARK mode".into());
+        }
+        self.ctx.invert_mode();
         self.ctx.request_paint();
         self.ctx.request_accessibility_update();
+    }
+        /// Set the text.
+    ///
+    /// We enforce this to be an `ArcStr` to make the allocation explicit.
+    pub fn set_text(&mut self, new_text: ArcStr) {
+        self.label_mut().set_text(new_text);
+    }
+    pub fn label_mut(&mut self) -> WidgetMut<'_, Label> {
+        self.ctx.get_mut(&mut self.widget.label)
     }
 
 }
@@ -45,16 +61,18 @@ impl Widget for LightDarkSwitch {
         match event {
             PointerEvent::PointerDown(_, _) => {
                 if !ctx.is_disabled() {
-                    self.dark_mode = !self.dark_mode;
-                    ctx.invert_mode();
                     ctx.capture_pointer();
+                    //ctx.request_paint();
                     trace!("Checkbox {:?} pressed", ctx.widget_id());
                 }
             }
-            PointerEvent::PointerUp(button, _) => {
+            PointerEvent::PointerUp(_, _) => {
                 if ctx.has_pointer_capture() && ctx.hovered() && !ctx.is_disabled() {
-                    ctx.submit_action(Action::ButtonPressed(*button));
-                    trace!("Button {:?} released", ctx.widget_id());
+                    self.dark_mode = !self.dark_mode;
+                    //self.checked = !self.checked;
+                    ctx.submit_action(Action::CheckboxChecked(self.dark_mode));
+                    ctx.request_accessibility_update();
+                    trace!("Checkbox {:?} released", ctx.widget_id());
                 }
                 ctx.request_paint();
             }
@@ -81,30 +99,40 @@ impl Widget for LightDarkSwitch {
     }
 
     fn register_children(&mut self, ctx: &mut RegisterCtx) {
-        ctx.register_child(&mut self.button);
+        ctx.register_child(&mut self.label);
     }
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
         let x_padding = theme::WIDGET_CONTROL_COMPONENT_PADDING;
         let check_size = theme::BASIC_WIDGET_HEIGHT;
 
-        let button_size = ctx.run_layout(&mut self.button, bc);
-        ctx.place_child(&mut self.button, (check_size + x_padding, 0.0).into());
-        button_size
+        let label_size = ctx.run_layout(&mut self.label, bc);
+        ctx.place_child(&mut self.label, (check_size + x_padding, 0.0).into());
+
+        let desired_size = Size::new(
+            check_size + x_padding + label_size.width,
+            check_size.max(label_size.height),
+        );
+        let our_size = bc.constrain(desired_size);
+        let baseline =
+            ctx.child_baseline_offset(&self.label) + (our_size.height - label_size.height);
+        ctx.set_baseline_offset(baseline);
+        trace!("Computed layout: size={}, baseline={}", our_size, baseline);
+        our_size
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx, _scene: &mut Scene) {
+    fn paint(&mut self, _ctx: &mut PaintCtx, _scene: &mut Scene) {
 
-        if self.dark_mode {
-            ctx.mutate(&mut self.button, move |mut button| {
-                button.set_text("Switch to LIGHT MODE");
-            });
-        }
-        else {
-            ctx.mutate(&mut self.button, move |mut button| {
-                button.set_text("Switch to DARK MODE");
-            });
-        }
+        // if self.dark_mode {
+        //     ctx.mutate(&mut self.button, move |mut button| {
+        //         button.set_text("Switch to LIGHT MODE");
+        //     });
+        // }
+        // else {
+        //     ctx.mutate(&mut self.button, move |mut button| {
+        //         button.set_text("Switch to DARK MODE");
+        //     });
+        // }
     }
 
     fn accessibility_role(&self) -> Role {
@@ -116,7 +144,7 @@ impl Widget for LightDarkSwitch {
         // the child label already has a 'name' property.
         // This is more of a proof of concept of `get_raw_ref()`.
         if false {
-            let button = ctx.get_raw_ref(&self.button);
+            let button = ctx.get_raw_ref(&self.label);
             let name = button.widget().short_type_name();
             node.set_name(name);
         }
@@ -130,7 +158,7 @@ impl Widget for LightDarkSwitch {
     }
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
-        smallvec![self.button.id()]
+        smallvec![self.label.id()]
     }
 
     fn make_trace_span(&self) -> Span {

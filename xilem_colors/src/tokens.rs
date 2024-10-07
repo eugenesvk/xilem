@@ -39,11 +39,11 @@ pub struct ColorTokens {
     pub low_contrast_text: Color,
     pub high_contrast_text: Color,
     pub(crate) inverse_color: bool,
-    pub(crate) text_color: Color,
+    pub color_on_accent: Color,
 }
 
 impl ColorTokens {
-    pub(crate) fn set_text_color(&mut self) {
+    pub(crate) fn color_on_accent(&mut self) {
         let white = Srgb::<u8>::from_components((255, 255, 255));
         let bg = self.solid_backgrounds;
         let bg_cl = Srgb::<u8>::from_components((bg.r, bg.g, bg.b));
@@ -58,17 +58,17 @@ impl ColorTokens {
             okhsl.lightness = 0.01;
             okhsl.saturation = 0.7;
             let (r, g, b) = Srgb::from_linear(okhsl.into_color()).into();
-            self.text_color = Color::rgb8(r, g, b);
+            self.color_on_accent = Color::rgb8(r, g, b);
         } else {
-            self.text_color = Color::WHITE;
+            self.color_on_accent = Color::WHITE;
         }
     }
 
     /// the color for the text on accented color (solid backgrounds)
-    #[must_use]
-    pub const fn text_color(&self) -> Color {
-        self.text_color
-    }
+    // #[must_use]
+    // pub const fn text_color(&self) -> Color {
+    //     self.color_on_accent
+    // }
 
     /// notifies when lc > -46.
     #[must_use]
@@ -108,7 +108,7 @@ impl ColorTokens {
             TokenColor::HoveredSolidBackgrounds => self.hovered_solid_backgrounds,
             TokenColor::LowContrastText => self.low_contrast_text,
             TokenColor::HighContrastText => self.high_contrast_text,
-            TokenColor::AccentText => self.text_color(),
+            TokenColor::AccentText => self.color_on_accent,
             TokenColor::Custom(color) => color,
             TokenColor::Transparent => Color::TRANSPARENT,         
         }

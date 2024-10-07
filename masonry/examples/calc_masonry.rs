@@ -20,7 +20,7 @@ use smallvec::{smallvec, SmallVec};
 use tracing::{trace, trace_span, Span};
 use vello::Scene;
 use winit::window::Window;
-use xilem_colors::tokens::Token;
+use xilem_colors::tokens::TokenColor;
 
 #[derive(Clone)]
 struct CalcState {
@@ -141,31 +141,15 @@ impl CalcButton {
 
 impl Widget for CalcButton {
     fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {
-        let colors = ctx.get_colortokens();
         match event {
             PointerEvent::PointerDown(_, _) => {
                 if !ctx.is_disabled() {
-                    // See on_status_change for why we use `mutate_later` here.
-                    ctx.mutate_later(&mut self.inner, move |mut inner| {
-                        inner.set_background(colors.solid_backgrounds);
-                    });
                     ctx.capture_pointer();
                     trace!("CalcButton {:?} pressed", ctx.widget_id());
                 }
             }
             PointerEvent::PointerUp(_, _) => {
                 if ctx.has_pointer_capture() && !ctx.is_disabled() {
-                    // See on_status_change for why we use `mutate_later` here.
-                    if self.is_digit {
-                        ctx.mutate_later(&mut self.inner, move |mut inner| {
-                            inner.set_background(colors.solid_backgrounds);
-                        });
-                    }
-                    else {
-                        ctx.mutate_later(&mut self.inner, move |mut inner| {
-                            inner.set_background(colors.ui_element_background);
-                        });
-                    }
                     ctx.submit_action(Action::Other(Box::new(self.action)));
                     trace!("CalcButton {:?} released", ctx.widget_id());
                     let num = match self.action {
@@ -242,10 +226,10 @@ impl Widget for CalcButton {
             }
         };
         let (border_color, stroke) = if ctx.hovered() {
-            (Token::HoveredUiElementBackground, 3.)
+            (TokenColor::HoveredUiElementBackground, 3.)
         }
         else {
-            (Token::SubtleBordersAndSeparators, 2.)
+            (TokenColor::SubtleBordersAndSeparators, 2.)
         };
         ctx.mutate(&mut self.inner, move |mut inner| {
             inner.set_background(bg);
@@ -313,7 +297,7 @@ fn op_button(op: char) -> CalcButton {
 fn digit_button(digit: u8) -> CalcButton {
     CalcButton::new(
         SizedBox::new(Align::centered(
-            Label::new(format!("{digit}")).with_text_size(24.).set_token(Some(Token::AccentText)),
+            Label::new(format!("{digit}")).with_text_size(24.).set_token(Some(TokenColor::AccentText)),
         ))
         .expand(),
         CalcAction::Digit(digit),

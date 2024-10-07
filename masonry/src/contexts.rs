@@ -83,10 +83,10 @@ impl<'a> EventCtx<'a> {
         self.global_state.colors.pick_theme(i);
     }
 
-    pub fn invert_mode(&mut self) {
-        self.global_state.colors.invert_mode();
-        self.request_paint();
-    }
+    // pub fn invert_mode(&mut self) {
+    //     self.global_state.colors.invert_mode();
+    //     self.request_paint();
+    // }
 }
 
 /// A context provided to the [`Widget::register_children`] method on widgets.
@@ -571,6 +571,11 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, LifeCycleCtx<'_>, {
         self.widget_state.is_explicitly_disabled = disabled;
     }
 
+    pub fn invert_mode(&mut self) {
+        self.global_state.colors.invert_mode();
+        self.request_paint();
+    }
+
     #[allow(unused)]
     /// Indicate that text input state has changed.
     ///
@@ -581,9 +586,11 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, LifeCycleCtx<'_>, {
         todo!("invalidate_text_input");
     }
 });
-
+// methods for Colorix
 impl_context_method!(
-    PaintCtx<'_>,{
+    PaintCtx<'_>,
+    EventCtx<'_>,
+    LifeCycleCtx<'_>,{
         pub fn mutate<W: Widget>(
             &mut self,
             child: &mut WidgetPod<W>,
@@ -595,6 +602,7 @@ impl_context_method!(
             };
             self.global_state.mutate_callbacks.push(callback);
         }
+        
         // pub fn mutate_self_now(
         //     &mut self,
         //     f: impl FnOnce(WidgetMut<'_, Box<dyn Widget>>) + Send + 'static,

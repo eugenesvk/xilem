@@ -31,7 +31,7 @@ impl AppDriver for Driver {
 }
 
 pub fn main() {
-    let label = Label::new("Hello").with_text_size(32.0).set_token(Some(xilem_colors::tokens::Token::Custom(Color::BLUE_VIOLET)));
+    let label = Label::new("Hello").with_text_size(32.0).set_token(Some(xilem_colors::tokens::TokenColor::Custom(Color::BLUE_VIOLET)));
     let button = Button::new("Say hello");
     let switch = LightDarkSwitch::new();
 
