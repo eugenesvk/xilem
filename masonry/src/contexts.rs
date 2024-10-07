@@ -15,7 +15,6 @@ use crate::action::Action;
 use crate::passes::layout::run_layout_on;
 use crate::render_root::{MutateCallback, RenderRootSignal, RenderRootState};
 use crate::text::TextBrush;
-use crate::text_helpers::ImeChangeSignal;
 use crate::tree_arena::{ArenaMutChildren, ArenaRefChildren};
 use crate::widget::{WidgetMut, WidgetRef, WidgetState};
 use crate::{
@@ -265,6 +264,14 @@ impl_context_method!(
         /// content area.
         pub fn window_origin(&self) -> Point {
             self.widget_state.window_origin()
+        }
+
+        /// The clip path of the widget, if any was set.
+        ///
+        /// For more information, see
+        /// [`LayoutCtx::set_clip_path`](crate::LayoutCtx::set_clip_path).
+        pub fn clip_path(&self) -> Option<Rect> {
+            self.widget_state.clip_path()
         }
 
         /// Convert a point from the widget's coordinate space to the window's.
