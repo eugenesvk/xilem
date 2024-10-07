@@ -6,6 +6,7 @@ pub mod utils;
 use scales::Scales;
 use tokens::{ColorPreset, ColorTokens};
 use utils::THEMES;
+use xilem_core::{View, ViewMarker};
 
 
 #[derive(Debug, Default, Clone)]
@@ -21,7 +22,7 @@ impl Colorix {
     pub fn init() -> Self {
         let theme = THEMES[6];
         let mut colorix = Self {
-            dark_mode: true,
+            dark_mode: false,
             theme,
             ..Default::default()
         };
@@ -83,3 +84,43 @@ impl Colorix {
 
 
 }
+
+// impl ViewMarker for Colorix {}
+// impl View for Colorix {
+//     type Element;
+
+//     type ViewState;
+
+//     fn build(&self, ctx: &mut Context) -> (Self::Element, Self::ViewState) {
+//         todo!()
+//     }
+
+//     fn rebuild<'el>(
+//         &self,
+//         prev: &Self,
+//         view_state: &mut Self::ViewState,
+//         ctx: &mut Context,
+//         element: xilem_core::Mut<'el, Self::Element>,
+//     ) -> xilem_core::Mut<'el, Self::Element> {
+//         todo!()
+//     }
+
+//     fn teardown(
+//         &self,
+//         view_state: &mut Self::ViewState,
+//         ctx: &mut Context,
+//         element: xilem_core::Mut<'_, Self::Element>,
+//     ) {
+//         todo!()
+//     }
+
+//     fn message(
+//         &self,
+//         view_state: &mut Self::ViewState,
+//         id_path: &[xilem_core::ViewId],
+//         message: Box<dyn Box<dyn Message>>,
+//         app_state: &mut State,
+//     ) -> xilem_core::MessageResult<Action, Box<dyn Box<dyn Message>>> {
+//         todo!()
+//     }
+// }

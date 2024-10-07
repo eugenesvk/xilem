@@ -9,7 +9,7 @@ use tracing::{trace, trace_span, warn, Span};
 use vello::kurbo::{Affine, RoundedRectRadii};
 use vello::peniko::{Brush, Color, Fill};
 use vello::Scene;
-use xilem_colors::tokens::Token;
+use xilem_colors::tokens::TokenColor;
 
 use crate::paint_scene_helpers::stroke;
 use crate::widget::{WidgetMut, WidgetPod};
@@ -43,7 +43,7 @@ pub struct SizedBox {
     width: Option<f64>,
     height: Option<f64>,
     background: Option<Brush>,
-    border_color: Option<Token>,
+    border_color: Option<TokenColor>,
     border_width: f64,
     //border: Option<BorderStyle>,
     corner_radius: RoundedRectRadii,
@@ -165,7 +165,7 @@ impl SizedBox {
     }
 
     /// Builder-style method for painting a border around the widget with a color and width.
-    pub fn border(mut self, token: Option<Token>, width: impl Into<f64>) -> Self {
+    pub fn border(mut self, token: Option<TokenColor>, width: impl Into<f64>) -> Self {
         self.border_color = token;
         self.border_width = width.into();
         self
@@ -251,7 +251,7 @@ impl WidgetMut<'_, SizedBox> {
     }
 
     /// Paint a border around the widget with a color and width.
-    pub fn set_border(&mut self, token: Option<Token>, width: impl Into<f64>) {
+    pub fn set_border(&mut self, token: Option<TokenColor>, width: impl Into<f64>) {
         self.widget.border_color = token;
         self.widget.border_width = width.into();
         self.ctx.request_layout();

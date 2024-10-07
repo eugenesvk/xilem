@@ -5,6 +5,7 @@ use accesskit::{NodeBuilder, Role};
 use smallvec::SmallVec;
 use tracing::{trace_span, Span};
 use vello::kurbo::{Affine, Line, Stroke};
+use vello::peniko::Fill;
 use vello::Scene;
 
 use crate::theme::get_debug_color;
@@ -266,7 +267,26 @@ impl Widget for Grid {
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
+        let colors = ctx.get_colortokens();
+        scene.fill(
+            Fill::NonZero,
+            Affine::IDENTITY,
+            colors.app_background,
+            Some(Affine::IDENTITY),
+            &ctx.size().to_rect(),
+        );
+
+        // trace_span!("paint background").in_scope(|| {
+        //     scene.fill(
+        //         Fill::NonZero,
+        //         Affine::IDENTITY,
+        //         colors.app_background,
+        //         Some(Affine::IDENTITY),
+        //         &ctx.size().to_rect(),
+        //     );
+        // });
         // paint the baseline if we're debugging layout
+
         if ctx.debug_paint && ctx.widget_state.baseline_offset != 0.0 {
             let color = get_debug_color(ctx.widget_id().to_raw());
             let my_baseline = ctx.size().height - ctx.widget_state.baseline_offset;

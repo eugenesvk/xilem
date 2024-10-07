@@ -4,7 +4,7 @@ use peniko::Color;
 
 
 #[derive(Default, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
-pub enum Token {
+pub enum TokenColor {
     #[default]
     AppBackground,
     SubtleBackground,
@@ -94,23 +94,23 @@ impl ColorTokens {
         }
     }
 
-    pub fn set_token(&self, token: Token) -> Color {
+    pub fn set_token(&self, token: TokenColor) -> Color {
         match token {
-            Token::AppBackground => self.app_background,
-            Token::SubtleBackground => self.subtle_background,
-            Token::UiElementBackground => self.ui_element_background,
-            Token::HoveredUiElementBackground => self.hovered_ui_element_background,
-            Token::ActiveUiElementBackground => self.active_ui_element_background,
-            Token::SubtleBordersAndSeparators => self.subtle_borders_and_separators,
-            Token::UiElementBorderAndFocusRings => self.ui_element_border_and_focus_rings,
-            Token::HoveredUiElementBorder => self.hovered_ui_element_border,
-            Token::SolidBackgrounds => self.solid_backgrounds,
-            Token::HoveredSolidBackgrounds => self.hovered_solid_backgrounds,
-            Token::LowContrastText => self.low_contrast_text,
-            Token::HighContrastText => self.high_contrast_text,
-            Token::AccentText => self.text_color(),
-            Token::Custom(color) => color,
-            Token::Transparent => Color::TRANSPARENT,         
+            TokenColor::AppBackground => self.app_background,
+            TokenColor::SubtleBackground => self.subtle_background,
+            TokenColor::UiElementBackground => self.ui_element_background,
+            TokenColor::HoveredUiElementBackground => self.hovered_ui_element_background,
+            TokenColor::ActiveUiElementBackground => self.active_ui_element_background,
+            TokenColor::SubtleBordersAndSeparators => self.subtle_borders_and_separators,
+            TokenColor::UiElementBorderAndFocusRings => self.ui_element_border_and_focus_rings,
+            TokenColor::HoveredUiElementBorder => self.hovered_ui_element_border,
+            TokenColor::SolidBackgrounds => self.solid_backgrounds,
+            TokenColor::HoveredSolidBackgrounds => self.hovered_solid_backgrounds,
+            TokenColor::LowContrastText => self.low_contrast_text,
+            TokenColor::HighContrastText => self.high_contrast_text,
+            TokenColor::AccentText => self.text_color(),
+            TokenColor::Custom(color) => color,
+            TokenColor::Transparent => Color::TRANSPARENT,         
         }
     }
 }

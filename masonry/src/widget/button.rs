@@ -11,6 +11,7 @@ use vello::Scene;
 use crate::action::Action;
 use crate::event::PointerButton;
 use crate::paint_scene_helpers::{fill_lin_gradient, stroke, UnitPoint};
+use crate::text::TextBrush;
 use crate::widget::{Label, WidgetMut, WidgetPod};
 
 use crate::{
@@ -72,6 +73,9 @@ impl WidgetMut<'_, Button> {
 
     pub fn label_mut(&mut self) -> WidgetMut<'_, Label> {
         self.ctx.get_mut(&mut self.widget.label)
+    }
+    pub fn set_text_color(&mut self, new_color: impl Into<TextBrush>) {
+        self.label_mut().set_text_brush(new_color);
     }
 }
 

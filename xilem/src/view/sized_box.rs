@@ -13,7 +13,7 @@ use crate::{
     core::{Mut, View, ViewId},
     Pod, ViewCtx, WidgetView,
 };
-use xilem_colors::tokens::Token;
+use xilem_colors::tokens::TokenColor;
 
 /// A widget with predefined size.
 ///
@@ -42,7 +42,7 @@ pub struct SizedBox<V, State, Action = ()> {
     width: Option<f64>,
     height: Option<f64>,
     background: Option<Brush>,
-    border_color: Option<Token>,
+    border_color: Option<TokenColor>,
     border_width: f64,
     //border: Option<BorderStyle>,
     corner_radius: RoundedRectRadii,
@@ -104,7 +104,7 @@ impl<V, State, Action> SizedBox<V, State, Action> {
     }
 
     /// Builder-style method for painting a border around the widget with a color and width.
-    pub fn border(mut self, color: Option<Token>, width: impl Into<f64>) -> Self {
+    pub fn border(mut self, color: Option<TokenColor>, width: impl Into<f64>) -> Self {
         self.border_color = color;
         self.border_width = width.into();
         self

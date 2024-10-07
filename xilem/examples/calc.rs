@@ -11,6 +11,7 @@ use xilem::{
     view::{button, flex, label, sized_box, Axis},
     EventLoop, WidgetView, Xilem,
 };
+use xilem_colors::tokens::TokenColor;
 
 #[derive(Copy, Clone)]
 enum MathOperator {
@@ -255,7 +256,7 @@ fn expanded_button(
     text: &str,
     callback: impl Fn(&mut Calculator) + Send + Sync + 'static,
 ) -> impl WidgetView<Calculator> + '_ {
-    sized_box(button(text, callback)).expand()
+    sized_box(button(text, callback)).expand().border(Some(TokenColor::Transparent), 1.)
 }
 
 /// Returns an expanded button that triggers the calculator's operator handler,

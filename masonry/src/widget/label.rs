@@ -11,7 +11,7 @@ use tracing::{trace, trace_span, Span};
 use vello::kurbo::{Affine, Point, Size};
 use vello::peniko::BlendMode;
 use vello::Scene;
-use xilem_colors::tokens::Token;
+use xilem_colors::tokens::TokenColor;
 
 use crate::text::{TextBrush, TextLayout};
 use crate::widget::WidgetMut;
@@ -45,7 +45,7 @@ pub struct Label {
     show_disabled: bool,
     brush: TextBrush,
     skip_pointer: bool,
-    token: Option<Token>
+    token: Option<TokenColor>
 }
 
 // --- MARK: BUILDERS ---
@@ -79,7 +79,7 @@ impl Label {
         self
     }
 
-    pub fn set_token(mut self, token: Option<Token>) -> Self {
+    pub fn set_token(mut self, token: Option<TokenColor>) -> Self {
         self.token = token;
         self
     }
@@ -128,7 +128,7 @@ impl WidgetMut<'_, Label> {
         ret
     }
 
-    pub fn set_token(&mut self, token: Option<Token>) {
+    pub fn set_token(&mut self, token: Option<TokenColor>) {
         self.widget.token = token;
     }
 
