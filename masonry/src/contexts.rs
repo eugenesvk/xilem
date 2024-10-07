@@ -583,15 +583,15 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, LifeCycleCtx<'_>, {
         self.request_paint();
     }
 
-    #[allow(unused)]
-    /// Indicate that text input state has changed.
-    ///
-    /// A widget that accepts text input should call this anytime input state
-    /// (such as the text or the selection) changes as a result of a non text-input
-    /// event.
-    pub fn invalidate_text_input(&mut self, event: ImeChangeSignal) {
-        todo!("invalidate_text_input");
-    }
+    // #[allow(unused)]
+    // /// Indicate that text input state has changed.
+    // ///
+    // /// A widget that accepts text input should call this anytime input state
+    // /// (such as the text or the selection) changes as a result of a non text-input
+    // /// event.
+    // pub fn invalidate_text_input(&mut self, event: ImeChangeSignal) {
+    //     todo!("invalidate_text_input");
+    // }
 });
 // methods for Colorix
 impl_context_method!(
