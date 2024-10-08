@@ -12,7 +12,6 @@ use xilem_colors::tokens::TokenColor;
 use crate::action::Action;
 use crate::event::PointerButton;
 use crate::paint_scene_helpers::{fill_lin_gradient, stroke, UnitPoint};
-use crate::text::TextBrush;
 use crate::widget::{Label, WidgetMut, WidgetPod};
 
 use crate::{
@@ -194,10 +193,10 @@ impl Widget for Button {
             .inset(-stroke_width / 2.0)
             .to_rounded_rect(theme::BUTTON_BORDER_RADIUS);
 
-        let bg_gradient = if self.selected && hovered {
+        let bg_gradient = if self.selected && self.selectable && hovered {
             [tokens.hovered_solid_backgrounds, tokens.hovered_solid_backgrounds]
         }
-        else if self.selected {
+        else if self.selected && self. selectable {
             [tokens.solid_backgrounds, tokens.solid_backgrounds]
         }
         else if is_active {
