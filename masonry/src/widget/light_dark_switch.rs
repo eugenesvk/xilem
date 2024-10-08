@@ -26,7 +26,7 @@ impl LightDarkSwitch {
     /// Create a new `Switch`.
     pub fn new() -> LightDarkSwitch {
         LightDarkSwitch {
-            button: WidgetPod::new(Button::from_label(Label::new("Switch to LIGHT mode").with_skip_pointer(true)).selectable()),
+            button: WidgetPod::new(Button::from_label(Label::new("Switch to LIGHT mode").with_skip_pointer(true))),
             dark_mode: true
         }
     }
@@ -59,7 +59,6 @@ impl Widget for LightDarkSwitch {
         match event {
             PointerEvent::PointerDown(_, _) => {
                 if !ctx.is_disabled() {
-                    //ctx.capture_pointer();
                     ctx.request_paint();
                     trace!("LightDarkSwitch {:?} pressed", ctx.widget_id());
                 }
@@ -67,7 +66,6 @@ impl Widget for LightDarkSwitch {
             PointerEvent::PointerUp(_, _) => {
                 if ctx.hovered() && !ctx.is_disabled() {
                     self.dark_mode = !self.dark_mode;
-                    dbg!(self.dark_mode);
                     let dark = self.dark_mode;
                     ctx.mutate_later(&mut self.button, move|mut button| {
                         if dark {
@@ -81,7 +79,6 @@ impl Widget for LightDarkSwitch {
                     });
                     ctx.invert_mode();
                     ctx.request_paint();
-                    ctx.submit_action(Action::CheckboxChecked(self.dark_mode));
                     ctx.request_accessibility_update();
                     trace!("LightDarkSwitch {:?} released", ctx.widget_id());
                 }
@@ -124,16 +121,7 @@ impl Widget for LightDarkSwitch {
         size
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
-        
-        // if self.dark_mode {
-        //     ctx.mutate(&mut self.button, |mut button| {
-        //         button.set_text("Switch to LIGHT mode");
-        //     });
-        // }
-        // else {ctx.mutate(&mut self.button, |mut button| {
-        //     button.set_text("Switch to DARK mode");
-        // });}
+    fn paint(&mut self, _ctx: &mut PaintCtx, _scene: &mut Scene) {
     }
 
     fn accessibility_role(&self) -> Role {
