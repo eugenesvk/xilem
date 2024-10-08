@@ -9,7 +9,7 @@
 
 use masonry::app_driver::{AppDriver, DriverCtx};
 use masonry::dpi::LogicalSize;
-use masonry::widget::{Button, Flex, Label, RootWidget, LightDarkSwitch};
+use masonry::widget::{Button, Flex, Label, LightDarkSwitch, RootWidget, SizedBox};
 use masonry::{Action, Color, WidgetId};
 use winit::window::Window;
 
@@ -37,21 +37,24 @@ pub fn main() {
 
     // Arrange the two widgets vertically, with some padding
     let main_widget = Flex::column()
-        .with_child(label)
-        .with_spacer(VERTICAL_WIDGET_SPACING)
-        .with_child(button)
-        .with_child(switch);
+    .with_child(label)
+    .with_spacer(VERTICAL_WIDGET_SPACING)
+    .with_child(button)
+    .with_child(switch)
+    .with_spacer(100.);
+
+    let main_main_widget = SizedBox::new(main_widget).border(Some(xilem_colors::tokens::TokenColor::Transparent), 0.);
 
     let window_size = LogicalSize::new(400.0, 400.0);
     let window_attributes = Window::default_attributes()
         .with_title("Hello World!")
         .with_resizable(true)
-        .with_min_inner_size(window_size);
+        .with_max_inner_size(window_size);
 
     masonry::event_loop_runner::run(
         masonry::event_loop_runner::EventLoop::with_user_event(),
         window_attributes,
-        RootWidget::new(main_widget),
+        RootWidget::new(main_main_widget),
         Driver,
     )
     .unwrap();
