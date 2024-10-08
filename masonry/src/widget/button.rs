@@ -30,6 +30,8 @@ const LABEL_INSETS: Insets = Insets::uniform_xy(8., 2.);
 /// Emits [`Action::ButtonPressed`] when pressed.
 pub struct Button {
     label: WidgetPod<Label>,
+    selectable: bool,
+    pub selected: bool,
 }
 
 // --- MARK: BUILDERS ---
@@ -61,7 +63,13 @@ impl Button {
     pub fn from_label(label: Label) -> Button {
         Button {
             label: WidgetPod::new(label.with_skip_pointer(true)),
+            selectable: false,
+            selected: false,
         }
+    }
+    pub fn selectable(mut self) -> Self {
+        self.selectable = true;
+        self
     }
 }
 
@@ -71,9 +79,17 @@ impl WidgetMut<'_, Button> {
     pub fn set_text(&mut self, new_text: impl Into<ArcStr>) {
         self.label_mut().set_text(new_text);
     }
-
     pub fn label_mut(&mut self) -> WidgetMut<'_, Label> {
         self.ctx.get_mut(&mut self.widget.label)
+    }
+    pub fn selectable(&mut self) {
+        self.widget.selectable = true
+    }
+    pub fn selected(&mut self) {
+        self.widget.selected = true
+    }
+    pub fn unselected(&mut self) {
+        self.widget.selected = false
     }
 }
 
@@ -91,6 +107,9 @@ impl Widget for Button {
             PointerEvent::PointerUp(button, _) => {
                 if ctx.has_pointer_capture() && ctx.hovered() && !ctx.is_disabled() {
                     ctx.submit_action(Action::ButtonPressed(*button));
+                    if self.selectable {
+                        self.selected = !self.selected
+                    }
                     trace!("Button {:?} released", ctx.widget_id());
                 }
                 ctx.request_paint();
@@ -175,7 +194,13 @@ impl Widget for Button {
             .inset(-stroke_width / 2.0)
             .to_rounded_rect(theme::BUTTON_BORDER_RADIUS);
 
-        let bg_gradient = if is_active {
+        let bg_gradient = if self.selected && hovered {
+            [tokens.hovered_solid_backgrounds, tokens.hovered_solid_backgrounds]
+        }
+        else if self.selected {
+            [tokens.solid_backgrounds, tokens.solid_backgrounds]
+        }
+        else if is_active {
             [tokens.app_background, tokens.solid_backgrounds]
         } else if hovered {
                 [tokens.subtle_background, tokens.ui_element_background]

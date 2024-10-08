@@ -1,29 +1,26 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::{widget, ArcStr};
+use masonry::widget;
 use xilem_core::{Mut, ViewMarker};
 
 use crate::{MessageResult, Pod, View, ViewCtx, ViewId};
 
 pub fn light_dark_switch<F, State, Action>(
-    label: impl Into<ArcStr>,
-    checked: bool,
+    dark_mode: bool,
     callback: F,
 ) -> LightDarkSwitch<F>
 where
     F: Fn(&mut State, bool) -> Action + Send + 'static,
 {
     LightDarkSwitch {
-        label: label.into(),
+        dark_mode,
         callback,
-        checked,
     }
 }
 
 pub struct LightDarkSwitch<F> {
-    label: ArcStr,
-    checked: bool,
+    dark_mode: bool,
     callback: F,
 }
 
@@ -49,12 +46,9 @@ where
         ctx: &mut ViewCtx,
         mut element: Mut<'el, Self::Element>,
     ) -> Mut<'el, Self::Element> {
-        if prev.label != self.label {
-            element.set_text(self.label.clone());
-            ctx.mark_changed();
-        }
-        if prev.checked != self.checked {
-            element.switch_mode(self.checked);
+
+        if prev.dark_mode != self.dark_mode {
+            element.switch_mode(self.dark_mode);
             ctx.mark_changed();
         }
         element
@@ -72,27 +66,28 @@ where
     fn message(
         &self,
         (): &mut Self::ViewState,
-        id_path: &[ViewId],
+        _id_path: &[ViewId],
         message: xilem_core::DynMessage,
-        app_state: &mut State,
+        _app_state: &mut State,
     ) -> MessageResult<Action> {
-        debug_assert!(
-            id_path.is_empty(),
-            "id path should be empty in Checkbox::message"
-        );
-        match message.downcast::<masonry::Action>() {
-            Ok(action) => {
-                if let masonry::Action::CheckboxChecked(checked) = *action {
-                    MessageResult::Action((self.callback)(app_state, checked))
-                } else {
-                    tracing::error!("Wrong action type in Checkbox::message: {action:?}");
-                    MessageResult::Stale(action)
-                }
-            }
-            Err(message) => {
-                tracing::error!("Wrong message type in Checkbox::message");
-                MessageResult::Stale(message)
-            }
-        }
+        // debug_assert!(
+        //     id_path.is_empty(),
+        //     "id path should be empty in Checkbox::message"
+        // );
+        // match message.downcast::<masonry::Action>() {
+        //     Ok(action) => {
+        //         if let masonry::Action::ButtonPressed() = *action {
+        //             MessageResult::Action((self.callback)(app_state, checked))
+        //         } else {
+        //             tracing::error!("Wrong action type in Checkbox::message: {action:?}");
+        //             MessageResult::Stale(action)
+        //         }
+        //     }
+        //     Err(message) => {
+        //         tracing::error!("Wrong message type in Checkbox::message");
+        //         MessageResult::Stale(message)
+        //     }
+        // }
+        MessageResult::Stale(message)
     }
 }

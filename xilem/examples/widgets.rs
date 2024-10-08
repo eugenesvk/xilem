@@ -8,7 +8,7 @@ use masonry::event_loop_runner::{EventLoop, EventLoopBuilder};
 use winit::error::EventLoopError;
 use winit::window::Window;
 use xilem::core::adapt;
-use xilem::view::{button, checkbox, flex, flex_item, progress_bar, sized_box, Axis, FlexSpacer};
+use xilem::view::{button, checkbox, flex, flex_item, light_dark_switch, progress_bar, sized_box, Axis, FlexSpacer};
 use xilem::{WidgetView, Xilem};
 
 const SPACER_WIDTH: f64 = 10.;
@@ -44,6 +44,12 @@ fn progress_bar_view(data: Option<f64>) -> impl WidgetView<Option<f64>> {
 
 fn checkbox_view(data: bool) -> impl WidgetView<bool> {
     checkbox("a simple checkbox", data, |data, new_state| {
+        *data = new_state;
+    })
+}
+
+fn mode_switch_view(data: bool) -> impl WidgetView<bool> {
+    light_dark_switch(data, |data, new_state| {
         *data = new_state;
     })
 }
