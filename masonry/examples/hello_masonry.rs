@@ -43,7 +43,7 @@ pub fn main() {
     .with_child(switch)
     .with_spacer(100.);
 
-    let main_main_widget = SizedBox::new(main_widget).border(Some(xilem_colors::tokens::TokenColor::Transparent), 0.);
+    let main_main_widget = SizedBox::new(main_widget); 
 
     let window_size = LogicalSize::new(400.0, 400.0);
     let window_attributes = Window::default_attributes()

@@ -579,8 +579,10 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, LifeCycleCtx<'_>, {
     }
 
     pub fn invert_mode(&mut self) {
+        self.widget_state.needs_invert_color_mode = true;
         self.global_state.colors.invert_mode();
-        self.request_paint();
+        // self.request_paint();
+    
     }
 
     // #[allow(unused)]
