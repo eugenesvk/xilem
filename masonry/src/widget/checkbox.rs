@@ -46,7 +46,7 @@ impl Checkbox {
 impl WidgetMut<'_, Checkbox> {
     pub fn set_checked(&mut self, checked: bool) {
         self.widget.checked = checked;
-        self.ctx.invert_mode();
+        //self.ctx.invert_mode();
         self.ctx.request_paint();
         self.ctx.request_accessibility_update();
     }
