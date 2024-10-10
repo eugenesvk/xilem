@@ -9,7 +9,7 @@ use std::time::Duration;
 use xilem::{
     tokio::time,
     view::{
-        button, button_any_pointer, checkbox, flex, label, prose, task, textbox, Axis,
+        button, light_dark_switch, button_any_pointer, checkbox, flex, label, prose, task, textbox, Axis,
         FlexExt as _, FlexSpacer,
     },
     Color, EventLoop, EventLoopBuilder, TextAlignment, WidgetView, Xilem,
@@ -90,6 +90,7 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> {
             toggleable(data),
             button("Decrement", |data: &mut AppData| data.count -= 1),
             button("Reset", |data: &mut AppData| data.count = 0),
+            //light_dark_switch(true, data.dark_mode, |data: &mut AppData| data.dark_mode = !data.dark_mode),
             flex((fizz_buzz_flex_sequence, flex_sequence)).direction(axis),
         )),
         // The following `task` view only exists whilst the example is in the "active" state, so
@@ -137,6 +138,7 @@ struct AppData {
     textbox_contents: String,
     count: i32,
     active: bool,
+    dark_mode: bool,
 }
 
 fn run(event_loop: EventLoopBuilder) {
@@ -144,6 +146,7 @@ fn run(event_loop: EventLoopBuilder) {
         count: 0,
         textbox_contents: "Not quite a placeholder".into(),
         active: false,
+        dark_mode: true,
     };
 
     Xilem::new(data, app_logic)
