@@ -29,7 +29,7 @@ const LABEL_INSETS: Insets = Insets::uniform_xy(8., 2.);
 /// Emits [`Action::ButtonPressed`] when pressed.
 pub struct Button {
     label: WidgetPod<Label>,
-    selectable: bool,
+    has_color_on_select: bool,
     pub selected: bool,
 }
 
@@ -62,12 +62,12 @@ impl Button {
     pub fn from_label(label: Label) -> Button {
         Button {
             label: WidgetPod::new(label.with_skip_pointer(true)),
-            selectable: false,
+            has_color_on_select: false,
             selected: false,
         }
     }
-    pub fn selectable(mut self) -> Self {
-        self.selectable = true;
+    pub fn colored_select(mut self) -> Self {
+        self.has_color_on_select = true;
         self
     }
 }
@@ -82,7 +82,7 @@ impl WidgetMut<'_, Button> {
         self.ctx.get_mut(&mut self.widget.label)
     }
     pub fn selectable(&mut self) {
-        self.widget.selectable = true
+        self.widget.has_color_on_select = true
     }
     pub fn selected(&mut self) {
         self.widget.selected = true
@@ -106,12 +106,11 @@ impl Widget for Button {
             PointerEvent::PointerUp(button, _) => {
                 if ctx.has_pointer_capture() && ctx.hovered() && !ctx.is_disabled() {
                     ctx.submit_action(Action::ButtonPressed(*button));
-                    if self.selectable {
+                    if self.has_color_on_select {
                         self.selected = !self.selected
                     }
                     trace!("Button {:?} released", ctx.widget_id());
                 }
-                ctx.request_paint();
             }
             _ => (),
         }
@@ -193,10 +192,10 @@ impl Widget for Button {
             .inset(-stroke_width / 2.0)
             .to_rounded_rect(theme::BUTTON_BORDER_RADIUS);
 
-        let bg_gradient = if self.selected && self.selectable && hovered {
+        let bg_gradient = if self.selected && self.has_color_on_select && hovered {
             [tokens.hovered_solid_backgrounds, tokens.hovered_solid_backgrounds]
         }
-        else if self.selected && self. selectable {
+        else if self.selected && self. has_color_on_select {
             [tokens.solid_backgrounds, tokens.solid_backgrounds]
         }
         else if is_active {
