@@ -557,9 +557,10 @@ impl RenderRoot {
             self.state.emit_signal(RenderRootSignal::RequestAnimFrame);
         }
 
-        if self.root_state().needs_invert_color_mode {
-            self.request_render_all();
-        }
+        // if self.root_state().needs_invert_color_mode {
+        //     self.request_render_all();
+
+        // }
 
         // We request a redraw if either the render tree or the accessibility
         // tree needs to be rebuilt. Usually both happen at the same time.
@@ -570,6 +571,11 @@ impl RenderRoot {
             || self.root_state().needs_layout
         {
             self.state.emit_signal(RenderRootSignal::RequestRedraw);
+        }
+        // requesting to repaint everything after invertion of color mode.
+        if self.root_state().needs_invert_color_mode {
+            self.request_render_all();
+
         }
 
         run_mutate_pass(self, widget_state);
@@ -595,7 +601,6 @@ impl RenderRoot {
                 },
             );
         }
-
         let (root_widget, mut root_state) = self.widget_arena.get_pair_mut(self.root.id());
         request_render_all_in(root_widget, root_state.reborrow_mut());
     }
