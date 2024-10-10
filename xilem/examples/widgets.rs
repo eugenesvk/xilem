@@ -19,6 +19,7 @@ const SPACER_WIDTH: f64 = 10.;
 struct WidgetGallery {
     progress: Option<f64>,
     checked: bool,
+    dark_mode: bool,
 }
 
 fn progress_bar_view(data: Option<f64>) -> impl WidgetView<Option<f64>> {
@@ -42,14 +43,20 @@ fn progress_bar_view(data: Option<f64>) -> impl WidgetView<Option<f64>> {
     ))
 }
 
-fn checkbox_view(data: bool) -> impl WidgetView<bool> {
-    checkbox("a simple checkbox", data, |data, new_state| {
+// fn light_dark(data: bool) -> impl WidgetView<bool> {
+//     light_dark_switch(data, |data| {
+//         *data = new_state;
+//     })
+// }
+
+fn light_dark(data: bool) -> impl WidgetView<bool> {
+    light_dark_switch(data, |data, new_state| {
         *data = new_state;
     })
 }
 
-fn mode_switch_view(data: bool) -> impl WidgetView<bool> {
-    light_dark_switch(data, |data, new_state| {
+fn checkbox_view(data: bool) -> impl WidgetView<bool> {
+    checkbox("a simple checkbox", data, |data, new_state| {
         *data = new_state;
     })
 }
@@ -78,6 +85,9 @@ fn app_logic(data: &mut WidgetGallery) -> impl WidgetView<WidgetGallery> {
     sized_box(
         flex((
             adapt(
+                flex_item(border_box(light_dark(data.dark_mode)), 1.),
+                |data: &mut WidgetGallery, thunk| thunk.call(&mut data.dark_mode),),
+            adapt(
                 flex_item(border_box(progress_bar_view(data.progress)), 1.),
                 |data: &mut WidgetGallery, thunk| thunk.call(&mut data.progress),
             ),
@@ -97,6 +107,7 @@ fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
     let data = WidgetGallery {
         progress: Some(0.5),
         checked: false,
+        dark_mode: true,
     };
 
     // Instantiate and run the UI using the passed event loop.

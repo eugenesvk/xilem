@@ -1,12 +1,11 @@
-use std::borrow::BorrowMut;
+
+use std::borrow::Borrow;
 
 use accesskit::{DefaultActionVerb, NodeBuilder, Role, Toggled};
 use smallvec::{smallvec, SmallVec};
 use tracing::{trace, trace_span, Span};
-use vello::kurbo::{Insets, Size};
+use vello::kurbo::Size;
 use vello::Scene;
-use xilem_colors::tokens::TokenColor;
-
 use crate::action::Action;
 use crate::widget::WidgetMut;
 
@@ -57,12 +56,6 @@ impl WidgetMut<'_, LightDarkSwitch> {
 impl Widget for LightDarkSwitch {
     fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {
         match event {
-            PointerEvent::PointerDown(_, _) => {
-                if !ctx.is_disabled() {
-                    ctx.request_paint();
-                    trace!("LightDarkSwitch {:?} pressed", ctx.widget_id());
-                }
-            }
             PointerEvent::PointerUp(_, _) => {
                 if ctx.hovered() && !ctx.is_disabled() {
                     self.dark_mode = !self.dark_mode;
@@ -78,7 +71,6 @@ impl Widget for LightDarkSwitch {
                         }
                     });
                     ctx.invert_mode();
-                    ctx.request_paint();
                     ctx.request_accessibility_update();
                     trace!("LightDarkSwitch {:?} released", ctx.widget_id());
                 }
