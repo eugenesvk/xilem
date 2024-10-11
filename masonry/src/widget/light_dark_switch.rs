@@ -35,12 +35,15 @@ impl LightDarkSwitch {
 impl WidgetMut<'_, LightDarkSwitch> {
     pub fn switch_mode(&mut self, dark_mode: bool) {
         self.widget.dark_mode = dark_mode;
-        if self.widget.dark_mode {
+        let i = if self.widget.dark_mode {
             self.set_text("Switch to LIGHT mode".into());
+            4
         }
         else {
             self.set_text("Switch to DARK mode".into());
-        }
+            6
+        };
+        self.ctx.switch_theme(i);
         self.ctx.invert_mode();
         self.ctx.request_paint();
         self.ctx.request_accessibility_update();
@@ -58,21 +61,9 @@ impl Widget for LightDarkSwitch {
         match event {
             PointerEvent::PointerUp(_, _) => {
                 if ctx.hovered() && !ctx.is_disabled() {
-                    self.dark_mode = !self.dark_mode;
-                    let dark = self.dark_mode;
-                    ctx.mutate_later(&mut self.button, move|mut button| {
-                        if dark {
-                            button.selected();
-                            button.set_text("Switch to LIGHT mode");
-                        }
-                        else {
-                            button.unselected();
-                            button.set_text("Switch to DARK mode");
-                        }
-                    });
-                    ctx.invert_mode();
-                    ctx.request_accessibility_update();
-                    trace!("LightDarkSwitch {:?} released", ctx.widget_id());
+                ctx.submit_action(Action::CheckboxChecked(self.dark_mode));
+                ctx.request_accessibility_update();
+                trace!("Checkbox {:?} released", ctx.widget_id());
                 }
             }
             _ => (),

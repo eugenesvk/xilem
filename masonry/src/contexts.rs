@@ -78,10 +78,6 @@ impl<'a> EventCtx<'a> {
         self.global_state.colors.tokens
     }
 
-    pub fn switch_theme(&mut self, i: usize) {
-        self.global_state.colors.pick_theme(i);
-    }
-
     // pub fn invert_mode(&mut self) {
     //     self.global_state.colors.invert_mode();
     //     self.request_paint();
@@ -581,6 +577,9 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, LifeCycleCtx<'_>, {
     pub fn invert_mode(&mut self) {
         self.widget_state.needs_invert_color_mode = true;
         self.global_state.colors.invert_mode();
+    }
+    pub fn switch_theme(&mut self, i: usize) {
+        self.global_state.colors.pick_theme(i);
     }
 
     // #[allow(unused)]
