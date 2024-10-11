@@ -26,14 +26,13 @@ use crate::passes::layout::root_layout;
 use crate::passes::mutate::{mutate_widget, run_mutate_pass};
 use crate::passes::paint::root_paint;
 use crate::passes::recurse_on_children;
-use crate::passes::recurse_on_children;
 use crate::passes::update::{
     run_update_anim_pass, run_update_disabled_pass, run_update_focus_chain_pass,
     run_update_focus_pass, run_update_new_widgets_pass, run_update_pointer_pass,
     run_update_scroll_pass, run_update_stashed_pass,
 };
 use crate::text::TextBrush;
-use crate::tree_arena::{ArenaMut, {ArenaMut, TreeArena}};
+use crate::tree_arena::{ArenaMut, TreeArena};
 use crate::widget::WidgetArena;
 use crate::widget::{WidgetMut, WidgetRef, WidgetState};
 use crate::{
@@ -184,17 +183,6 @@ impl RenderRoot {
             .into_child_mut(self.root.id().to_raw())
             .expect("root widget not in widget tree")
             .item
-    }
-
-    pub fn update_color_mode(&mut self) {
-        let root_state = self.widget_arena.get_state_mut(self.root.id()).item.clone();
-        dbg!(root_state.needs_invert_color_mode);
-        if root_state.needs_invert_color_mode {
-            //dbg!(root_state.needs_invert_color_mode);
-            //self.state.colors.invert_mode();
-            self.request_render_all();
-        }
-        
     }
 
     // --- MARK: WINDOW_EVENT ---
@@ -579,30 +567,6 @@ impl RenderRoot {
         }
 
         run_mutate_pass(self, widget_state);
-    }
-
-    pub(crate) fn request_render_all(&mut self) {
-        fn request_render_all_in(
-            mut widget: ArenaMut<'_, Box<dyn Widget>>,
-            state: ArenaMut<'_, WidgetState>,
-        ) {
-            state.item.needs_paint = true;
-            state.item.needs_accessibility = true;
-            state.item.request_paint = true;
-            state.item.request_accessibility = true;
-
-            let id = state.item.id;
-            recurse_on_children(
-                id,
-                widget.reborrow_mut(),
-                state.children,
-                |widget, mut state| {
-                    request_render_all_in(widget, state.reborrow_mut());
-                },
-            );
-        }
-        let (root_widget, mut root_state) = self.widget_arena.get_pair_mut(self.root.id());
-        request_render_all_in(root_widget, root_state.reborrow_mut());
     }
 
 
