@@ -21,13 +21,13 @@ fn next_pointer_event(recording: &Recording) -> Option<PointerEvent> {
 }
 
 fn hovered(harness: &TestHarness, id: WidgetId) -> bool {
-    harness.get_widget(id).state().hovered
+    harness.get_widget(id).ctx().hovered()
 }
 
-fn next_hot_changed(recording: &Recording) -> Option<bool> {
+fn next_hovered_changed(recording: &Recording) -> Option<bool> {
     while let Some(event) = recording.next() {
         match event {
-            Record::SC(StatusChange::HoveredChanged(hot)) => return Some(hot),
+            Record::SC(StatusChange::HoveredChanged(hovered)) => return Some(hovered),
             _ => {}
         }
     }
@@ -35,7 +35,7 @@ fn next_hot_changed(recording: &Recording) -> Option<bool> {
 }
 
 #[test]
-fn propagate_hot() {
+fn propagate_hovered() {
     let [button, pad, root, empty] = widget_ids();
 
     let root_rec = Recording::default();
@@ -62,7 +62,7 @@ fn propagate_hot() {
     padding_rec.clear();
     button_rec.clear();
 
-    harness.inspect_widgets(|widget| assert!(!widget.state().hovered));
+    harness.inspect_widgets(|widget| assert!(!widget.ctx().hovered()));
 
     // What we are doing here is moving the mouse to different widgets,
     // and verifying both the widget's `hovered` status and also that
@@ -72,10 +72,10 @@ fn propagate_hot() {
 
     harness.mouse_move_to(empty);
 
-    dbg!(harness.get_widget(button).state().window_layout_rect());
-    dbg!(harness.get_widget(pad).state().window_layout_rect());
-    dbg!(harness.get_widget(root).state().window_layout_rect());
-    dbg!(harness.get_widget(empty).state().window_layout_rect());
+    dbg!(harness.get_widget(button).ctx().window_layout_rect());
+    dbg!(harness.get_widget(pad).ctx().window_layout_rect());
+    dbg!(harness.get_widget(root).ctx().window_layout_rect());
+    dbg!(harness.get_widget(empty).ctx().window_layout_rect());
 
     eprintln!("root: {root:?}");
     eprintln!("empty: {empty:?}");
@@ -86,9 +86,9 @@ fn propagate_hot() {
     assert!(hovered(&harness, empty));
     assert!(!hovered(&harness, pad));
 
-    assert_eq!(next_hot_changed(&root_rec), Some(true));
-    assert_eq!(next_hot_changed(&padding_rec), None);
-    assert_eq!(next_hot_changed(&button_rec), None);
+    assert_eq!(next_hovered_changed(&root_rec), Some(true));
+    assert_eq!(next_hovered_changed(&padding_rec), None);
+    assert_eq!(next_hovered_changed(&button_rec), None);
     root_rec.clear();
 
     // Move to padding spacer of Flex column
@@ -102,9 +102,9 @@ fn propagate_hot() {
     assert!(!hovered(&harness, button));
     assert!(hovered(&harness, pad));
 
-    assert_eq!(next_hot_changed(&root_rec), None);
-    assert_eq!(next_hot_changed(&padding_rec), Some(true));
-    assert_eq!(next_hot_changed(&button_rec), None);
+    assert_eq!(next_hovered_changed(&root_rec), None);
+    assert_eq!(next_hovered_changed(&padding_rec), Some(true));
+    assert_eq!(next_hovered_changed(&button_rec), None);
     padding_rec.clear();
 
     // Move to button
@@ -116,8 +116,8 @@ fn propagate_hot() {
     assert!(hovered(&harness, button));
     assert!(hovered(&harness, pad));
 
-    assert_eq!(next_hot_changed(&padding_rec), None);
-    assert_eq!(next_hot_changed(&button_rec), Some(true));
+    assert_eq!(next_hovered_changed(&padding_rec), None);
+    assert_eq!(next_hovered_changed(&button_rec), Some(true));
     root_rec.clear();
     padding_rec.clear();
     button_rec.clear();
@@ -131,13 +131,13 @@ fn propagate_hot() {
     assert!(!hovered(&harness, button));
     assert!(!hovered(&harness, pad));
 
-    assert_eq!(next_hot_changed(&root_rec), None);
-    assert_eq!(next_hot_changed(&padding_rec), Some(false));
-    assert_eq!(next_hot_changed(&button_rec), Some(false));
+    assert_eq!(next_hovered_changed(&root_rec), None);
+    assert_eq!(next_hovered_changed(&padding_rec), Some(false));
+    assert_eq!(next_hovered_changed(&button_rec), Some(false));
 }
 
 #[test]
-fn update_hot_on_mouse_leave() {
+fn update_hovered_on_mouse_leave() {
     let [label_id] = widget_ids();
 
     let label_rec = Recording::default();
@@ -154,13 +154,13 @@ fn update_hot_on_mouse_leave() {
     harness.process_pointer_event(PointerEvent::PointerLeave(PointerState::empty()));
 
     assert!(!hovered(&harness, label_id));
-    assert_eq!(next_hot_changed(&label_rec), Some(false));
+    assert_eq!(next_hovered_changed(&label_rec), Some(false));
 }
 
 // TODO - https://github.com/PoignardAzur/masonry-rs/issues/58
 #[cfg(FALSE)]
 #[test]
-fn update_hot_from_layout() {
+fn update_hovered_from_layout() {
     pub const COLLAPSE: Selector = Selector::new("masonry-test.collapse");
     pub const BOX_SIZE: Size = Size::new(50.0, 50.0);
 
@@ -210,7 +210,7 @@ fn update_hot_from_layout() {
     assert!(!hovered(&harness, collapsible_id));
     assert!(hovered(&harness, box_id));
 
-    assert_eq!(next_hot_changed(&box_rec), Some(true));
+    assert_eq!(next_hovered_changed(&box_rec), Some(true));
 }
 
 #[test]

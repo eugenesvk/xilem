@@ -276,8 +276,7 @@ pub enum LifeCycle {
     /// the monitor's refresh, causing lag or jerky animations.
     AnimFrame(u64),
 
-    // TODO - Put in StatusChange
-    /// Called when the Disabled state of the widgets is changed.
+    /// Called when the Disabled state of the widget is changed.
     ///
     /// To check if a widget is disabled, see [`is_disabled`].
     ///
@@ -287,6 +286,16 @@ pub enum LifeCycle {
     /// [`set_disabled`]: crate::EventCtx::set_disabled
     DisabledChanged(bool),
 
+    // TODO - Link to tutorial doc.
+    /// Called when the Stashed state of the widget is changed.
+    ///
+    /// To check if a widget is stashed, see [`is_stashed`].
+    ///
+    /// To change a widget's stashed state, see [`set_stashed`].
+    ///
+    /// [`is_stashed`]: crate::EventCtx::is_stashed
+    /// [`set_stashed`]: crate::EventCtx::set_stashed
+    StashedChanged(bool),
     /// Called when the widget tree changes and Masonry wants to rebuild the
     /// Focus-chain.
     ///
@@ -307,11 +316,11 @@ pub enum LifeCycle {
 #[non_exhaustive]
 #[derive(Debug, Clone)]
 pub enum StatusChange {
-    /// Called when the "hot" status changes.
+    /// Called when the "hovered" status changes.
     ///
     /// This will always be called _before_ the event that triggered it; that is,
     /// when the mouse moves over a widget, that widget will receive
-    /// `StatusChange::HotChanged` before it receives `Event::MouseMove`.
+    /// `StatusChange::HoveredChanged` before it receives `Event::MouseMove`.
     ///
     /// See [`hovered`](crate::EventCtx::hovered) for
     /// discussion about the hot status.
@@ -333,6 +342,21 @@ pub enum StatusChange {
 }
 
 impl PointerEvent {
+    pub fn new_pointer_leave() -> Self {
+        // TODO - The fact we're creating so many dummy values might be
+        // a sign we should refactor that struct
+        let pointer_state = PointerState {
+            physical_position: Default::default(),
+            position: Default::default(),
+            buttons: Default::default(),
+            mods: Default::default(),
+            count: 0,
+            focus: false,
+            force: None,
+        };
+        PointerEvent::PointerLeave(pointer_state)
+    }
+
     pub fn pointer_state(&self) -> &PointerState {
         match self {
             PointerEvent::PointerDown(_, state)
@@ -482,6 +506,7 @@ impl LifeCycle {
             LifeCycle::WidgetAdded => true,
             LifeCycle::AnimFrame(_) => true,
             LifeCycle::DisabledChanged(_) => true,
+            LifeCycle::StashedChanged(_) => true,
             LifeCycle::BuildFocusChain => false,
             LifeCycle::RequestPanToChild(_) => false,
         }
@@ -495,6 +520,7 @@ impl LifeCycle {
             LifeCycle::WidgetAdded => "WidgetAdded",
             LifeCycle::AnimFrame(_) => "AnimFrame",
             LifeCycle::DisabledChanged(_) => "DisabledChanged",
+            LifeCycle::StashedChanged(_) => "StashedChanged",
             LifeCycle::BuildFocusChain => "BuildFocusChain",
             LifeCycle::RequestPanToChild(_) => "RequestPanToChild",
         }

@@ -9,9 +9,8 @@ use tracing::{trace_span, Span};
 use vello::kurbo::Rect;
 use vello::Scene;
 
-use super::Axis;
 use crate::paint_scene_helpers::{fill_color, stroke};
-use crate::widget::WidgetMut;
+use crate::widget::{Axis, WidgetMut};
 use crate::{
     theme, AccessCtx, AccessEvent, AllowRawMut, BoxConstraints, EventCtx, LayoutCtx, LifeCycle,
     LifeCycleCtx, PaintCtx, Point, PointerEvent, RegisterCtx, Size, StatusChange, TextEvent,
@@ -36,8 +35,6 @@ pub struct ScrollBar {
     pub(crate) moved: bool,
     pub(crate) portal_size: f64,
     pub(crate) content_size: f64,
-    #[allow(dead_code)]
-    hovered: bool,
     grab_anchor: Option<f64>,
 }
 
@@ -50,7 +47,6 @@ impl ScrollBar {
             moved: false,
             portal_size,
             content_size,
-            hovered: false,
             grab_anchor: None,
         }
     }

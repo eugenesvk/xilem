@@ -10,19 +10,17 @@ use parley::fontique::Weight;
 use parley::layout::Alignment;
 use parley::style::{FontFamily, FontStack};
 use smallvec::SmallVec;
-use tracing::{trace, trace_span, Span};
+use tracing::{trace_span, Span};
 use vello::kurbo::{Affine, Point, Size};
 use vello::peniko::BlendMode;
 use vello::Scene;
 
 use crate::text::{Hinting, TextBrush, TextLayout};
-use crate::widget::WidgetMut;
+use crate::widget::{LineBreaking, WidgetMut};
 use crate::{
     AccessCtx, AccessEvent, ArcStr, BoxConstraints, EventCtx, LayoutCtx, LifeCycle, LifeCycleCtx,
     PaintCtx, PointerEvent, RegisterCtx, StatusChange, TextEvent, Widget, WidgetId,
 };
-
-use super::LineBreaking;
 
 // added padding between the edges of the widget and the text.
 pub(super) const LABEL_X_PADDING: f64 = 2.0;
@@ -375,14 +373,7 @@ impl Widget for VariableLabel {
             height: text_size.height,
             width: text_size.width + 2. * LABEL_X_PADDING,
         };
-        let size = bc.constrain(label_size);
-        trace!(
-            "Computed layout: max={:?}. w={}, h={}",
-            max_advance,
-            size.width,
-            size.height,
-        );
-        size
+        bc.constrain(label_size)
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {

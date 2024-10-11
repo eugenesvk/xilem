@@ -271,7 +271,7 @@ impl AppDriver for CalcState {
         }
 
         ctx.get_root::<RootWidget<Flex>>()
-            .get_element()
+            .child_mut()
             .child_mut(1)
             .unwrap()
             .downcast::<Label>()

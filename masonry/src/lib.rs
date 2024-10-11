@@ -34,7 +34,7 @@
 //!         match action {
 //!             Action::ButtonPressed(_) => {
 //!                 let mut root: WidgetMut<RootWidget<Portal<Flex>>> = ctx.get_root();
-//!                 let mut root = root.get_element();
+//!                 let mut root = root.child_mut();
 //!                 let mut flex = root.child_mut();
 //!                 flex.add_child(Label::new(self.next_task.clone()));
 //!             }
@@ -147,6 +147,8 @@ pub use parley::layout::Alignment as TextAlignment;
 pub use util::{AsAny, Handled};
 pub use vello::peniko::{Color, Gradient};
 pub use widget::widget::{AllowRawMut, Widget, WidgetId};
-pub use widget::{WidgetPod, WidgetState};
+pub use widget::WidgetPod;
 
 pub use text::ArcStr;
+
+pub(crate) use widget::WidgetState;

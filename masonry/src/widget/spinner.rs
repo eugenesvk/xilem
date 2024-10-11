@@ -7,7 +7,7 @@ use std::f64::consts::PI;
 
 use accesskit::{NodeBuilder, Role};
 use smallvec::SmallVec;
-use tracing::{trace, trace_span, Span};
+use tracing::{trace_span, Span};
 use vello::kurbo::{Affine, Cap, Line, Stroke};
 use vello::Scene;
 
@@ -24,7 +24,7 @@ use crate::{
 /// To customize the spinner's size, you can place it inside a [`SizedBox`]
 /// that has a fixed width and height.
 ///
-/// [`SizedBox`]: struct.SizedBox.html
+/// [`SizedBox`]: crate::widget::SizedBox
 pub struct Spinner {
     t: f64,
     color: Color,
@@ -38,10 +38,6 @@ impl Spinner {
     }
 
     /// Builder-style method for setting the spinner's color.
-    ///
-    /// The argument can be either a `Color` or a [`Key<Color>`].
-    ///
-    /// [`Key<Color>`]: ../struct.Key.html
     pub fn with_color(mut self, color: impl Into<Color>) -> Self {
         self.color = color.into();
         self
@@ -62,10 +58,6 @@ impl Default for Spinner {
 // --- MARK: WIDGETMUT ---
 impl WidgetMut<'_, Spinner> {
     /// Set the spinner's color.
-    ///
-    /// The argument can be either a `Color` or a [`Key<Color>`].
-    ///
-    /// [`Key<Color>`]: ../struct.Key.html
     pub fn set_color(&mut self, color: impl Into<Color>) {
         self.widget.color = color.into();
         self.ctx.request_paint();
@@ -98,7 +90,7 @@ impl Widget for Spinner {
             LifeCycle::AnimFrame(interval) => {
                 self.t += (*interval as f64) * 1e-9;
                 if self.t >= 1.0 {
-                    self.t = 0.0;
+                    self.t = self.t.rem_euclid(1.0);
                 }
                 ctx.request_anim_frame();
                 ctx.request_paint();
@@ -108,17 +100,14 @@ impl Widget for Spinner {
     }
 
     fn layout(&mut self, _ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
-        let size = if bc.is_width_bounded() && bc.is_height_bounded() {
+        if bc.is_width_bounded() && bc.is_height_bounded() {
             bc.max()
         } else {
             bc.constrain(Size::new(
                 theme::BASIC_WIDGET_HEIGHT,
                 theme::BASIC_WIDGET_HEIGHT,
             ))
-        };
-
-        trace!("Computed size: {}", size);
-        size
+        }
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
@@ -174,7 +163,6 @@ mod tests {
     use super::*;
     use crate::assert_render_snapshot;
     use crate::testing::TestHarness;
-    //use {std::time,web_time}::Duration;
 
     #[test]
     fn simple_spinner() {
@@ -183,9 +171,11 @@ mod tests {
         let mut harness = TestHarness::create(spinner);
         assert_render_snapshot!(harness, "spinner_init");
 
-        // TODO - See https://github.com/linebender/xilem/issues/369
-        //harness.move_timers_forward(Duration::from_millis(700));
-        //assert_render_snapshot!(harness, "spinner_700ms");
+        harness.animate_ms(700);
+        assert_render_snapshot!(harness, "spinner_700ms");
+
+        harness.animate_ms(400);
+        assert_render_snapshot!(harness, "spinner_1100ms");
     }
 
     #[test]

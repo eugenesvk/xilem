@@ -88,6 +88,8 @@ impl<'a> EventCtx<'a> {
 pub struct RegisterCtx<'a> {
     pub(crate) widget_state_children: ArenaMutChildren<'a, WidgetState>,
     pub(crate) widget_children: ArenaMutChildren<'a, Box<dyn Widget>>,
+    #[cfg(debug_assertions)]
+    pub(crate) registered_ids: Vec<WidgetId>,
 }
 
 /// A context provided to the [`lifecycle`] method on widgets.
@@ -116,7 +118,6 @@ pub struct LayoutCtx<'a> {
     pub(crate) widget_state: &'a mut WidgetState,
     pub(crate) widget_state_children: ArenaMutChildren<'a, WidgetState>,
     pub(crate) widget_children: ArenaMutChildren<'a, Box<dyn Widget>>,
-    pub(crate) mouse_pos: Option<Point>,
 }
 
 pub struct ComposeCtx<'a> {
@@ -262,6 +263,14 @@ impl_context_method!(
             self.widget_state.window_origin()
         }
 
+        pub fn window_layout_rect(&self) -> Rect {
+            self.widget_state.window_layout_rect()
+        }
+
+        pub fn paint_rect(&self) -> Rect {
+            self.widget_state.paint_rect()
+        }
+
         /// The clip path of the widget, if any was set.
         ///
         /// For more information, see
@@ -281,7 +290,7 @@ impl_context_method!(
 
 // --- MARK: GET STATUS ---
 // Methods on all context types except LayoutCtx
-// Access status information (hot/pointer captured/disabled/etc).
+// Access status information (hovered/pointer captured/disabled/etc).
 impl_context_method!(
     MutateCtx<'_>,
     QueryCtx<'_>,
@@ -299,7 +308,7 @@ impl_context_method!(
         ///
         /// The hovered status is computed from the widget's layout rect. In a
         /// container hierarchy, all widgets with layout rects containing the
-        /// mouse position have hot status.
+        /// mouse position have hovered status.
         ///
         /// Discussion: there is currently some confusion about whether a
         /// widget can be considered hovered when some other widget has captured the
@@ -387,7 +396,7 @@ impl_context_method!(EventCtx<'_>, {
     /// Set the cursor icon.
     ///
     /// This setting will be retained until [`clear_cursor`] is called, but it will only take
-    /// effect when this widget is [`hot`] and/or [`has_pointer_capture`]. If a child widget also
+    /// effect when this widget [`is_hovered`] and/or [`has_pointer_capture`]. If a child widget also
     /// sets a cursor, the child widget's cursor will take precedence. (If that isn't what you
     /// want, use [`override_cursor`] instead.)
     ///
@@ -735,8 +744,8 @@ impl EventCtx<'_> {
     pub fn capture_pointer(&mut self) {
         debug_assert!(
             self.allow_pointer_capture,
-            "Error in #{}: event does not allow pointer capture",
-            self.widget_id().to_raw(),
+            "Error in {}: event does not allow pointer capture",
+            self.widget_id(),
         );
         // TODO: plumb pointer capture through to platform (through winit)
         self.global_state.pointer_capture_target = Some(self.widget_state.id);
@@ -814,8 +823,8 @@ impl EventCtx<'_> {
             self.global_state.next_focused_widget = None;
         } else {
             warn!(
-                "resign_focus can only be called by the currently focused widget \
-                 or one of its ancestors. ({:?})",
+                "resign_focus can only be called by the currently focused widget {} \
+                 or one of its ancestors.",
                 self.widget_id()
             );
         }
@@ -831,6 +840,11 @@ impl RegisterCtx<'_> {
         let Some(widget) = child.take_inner() else {
             return;
         };
+
+        #[cfg(debug_assertions)]
+        {
+            self.registered_ids.push(child.id());
+        }
 
         let id = child.id().to_raw();
         let state = WidgetState::new(child.id(), widget.short_type_name());
@@ -874,11 +888,11 @@ impl LayoutCtx<'_> {
     fn assert_layout_done(&self, child: &WidgetPod<impl Widget>, method_name: &str) {
         if self.get_child_state(child).needs_layout {
             debug_panic!(
-                "Error in #{}: trying to call '{}' with child '{}' #{} before computing its layout",
-                self.widget_id().to_raw(),
+                "Error in {}: trying to call '{}' with child '{}' {} before computing its layout",
+                self.widget_id(),
                 method_name,
                 self.get_child(child).short_type_name(),
-                child.id().to_raw(),
+                child.id(),
             );
         }
     }
@@ -887,11 +901,11 @@ impl LayoutCtx<'_> {
     fn assert_placed(&self, child: &WidgetPod<impl Widget>, method_name: &str) {
         if self.get_child_state(child).is_expecting_place_child_call {
             debug_panic!(
-                "Error in #{}: trying to call '{}' with child '{}' #{} before placing it",
-                self.widget_id().to_raw(),
+                "Error in {}: trying to call '{}' with child '{}' {} before placing it",
+                self.widget_id(),
                 method_name,
                 self.get_child(child).short_type_name(),
-                child.id().to_raw(),
+                child.id(),
             );
         }
     }
@@ -1071,8 +1085,8 @@ impl LayoutCtx<'_> {
         self.widget_state.needs_paint = true;
     }
 
-    /// Set the position of a child widget, in the parent's coordinate space. This
-    /// will also implicitly change "hot" status and affect the parent's display rect.
+    /// Set the position of a child widget, in the parent's coordinate space.
+    /// This will affect the parent's display rect.
     ///
     /// Container widgets must call this method with each non-stashed child in their
     /// layout method, after calling `child.layout(...)`.
@@ -1284,6 +1298,11 @@ mod private {
     pub trait Sealed {}
 }
 
+// TODO - Rethink RawWrapper API
+// We're exporting a trait with a method that returns a private type.
+// It's mostly fine because the trait is sealed anyway, but it's not great for documentation.
+
+#[allow(private_interfaces)]
 pub trait IsContext: private::Sealed {
     fn get_widget_state(&mut self) -> &mut WidgetState;
 }
@@ -1292,6 +1311,7 @@ macro_rules! impl_context_trait {
     ($SomeCtx:tt) => {
         impl private::Sealed for $SomeCtx<'_> {}
 
+        #[allow(private_interfaces)]
         impl IsContext for $SomeCtx<'_> {
             fn get_widget_state(&mut self) -> &mut WidgetState {
                 self.widget_state

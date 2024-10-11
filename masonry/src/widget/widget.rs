@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use std::any::Any;
+use std::fmt::Display;
 use std::num::NonZeroU64;
 use std::ops::{Deref, DerefMut};
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -86,7 +87,8 @@ pub trait Widget: AsAny {
     /// Leaf widgets can implement this with an empty body.
     ///
     /// Container widgets need to call [`RegisterCtx::register_child`] for all
-    /// their children. Forgetting to do so is a logic error and may lead to crashes.
+    /// their children. Forgetting to do so is a logic error and may lead to debug panics.
+    /// All the children returned by `children_ids` should be visited.
     fn register_children(&mut self, ctx: &mut RegisterCtx);
 
     /// Handle a lifecycle notification.
@@ -109,8 +111,14 @@ pub trait Widget: AsAny {
     /// the size of non-flex widgets first, to determine the amount of space
     /// available for the flex widgets.
     ///
+    /// Forgetting to visit children is a logic error and may lead to debug panics.
+    /// All the children returned by `children_ids` should be visited.
+    ///
     /// For efficiency, a container should only invoke layout of a child widget
     /// once, though there is nothing enforcing this.
+    ///
+    /// **Container widgets should not add or remove children during layout.**
+    /// Doing so is a logic error and may trigger a debug assertion.
     ///
     /// The layout strategy is strongly inspired by Flutter.
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size;
@@ -131,17 +139,18 @@ pub trait Widget: AsAny {
 
     fn accessibility(&mut self, ctx: &mut AccessCtx, node: &mut NodeBuilder);
 
-    /// Return references to this widget's children.
+    /// Return ids of this widget's children.
     ///
-    /// Leaf widgets return an empty array. Container widgets return references to
+    /// Leaf widgets return an empty array. Container widgets return ids of
     /// their children.
     ///
-    /// This methods has some validity invariants. A widget's children list must be
+    /// The list returned by this method is considered the "canonical" list of children
+    /// by Masonry.
+    ///
+    /// This method has some validity invariants. A widget's children list must be
     /// consistent. If children are added or removed, the parent widget should call
-    /// `children_changed` on one of the Ctx parameters. Container widgets are also
-    /// responsible for calling the main methods (`on_event`, `lifecycle`, `layout`,
-    /// `paint`) on their children.
-    /// TODO - Update this doc
+    /// `children_changed` on one of the Ctx parameters. Container widgets are
+    /// responsible for visiting all their children during `layout` and `register_children`.
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]>;
 
     // TODO - Rename
@@ -209,12 +218,12 @@ pub trait Widget: AsAny {
         for child_id in self.children_ids().iter().rev() {
             let child = ctx.get(*child_id);
 
-            let relative_pos = pos - child.state().window_origin().to_vec2();
+            let relative_pos = pos - child.ctx().window_origin().to_vec2();
             // The position must be inside the child's layout and inside the child's clip path (if
             // any).
-            if !child.state().is_stashed
+            if !child.ctx().is_stashed()
                 && !child.widget.skip_pointer()
-                && child.state().window_layout_rect().contains(pos)
+                && child.ctx().window_layout_rect().contains(pos)
             {
                 return Some(child);
             }
@@ -322,6 +331,12 @@ impl WidgetId {
 impl From<WidgetId> for accesskit::NodeId {
     fn from(id: WidgetId) -> accesskit::NodeId {
         accesskit::NodeId(id.0.into())
+    }
+}
+
+impl Display for WidgetId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "#{}", self.0)
     }
 }
 

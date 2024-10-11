@@ -15,12 +15,11 @@ use wgpu::{
 };
 use winit::event::Ime;
 
-use super::screenshots::get_image_diff;
-use super::snapshot_utils::get_cargo_workspace;
 use crate::action::Action;
 use crate::dpi::{LogicalPosition, PhysicalPosition, PhysicalSize};
 use crate::event::{PointerButton, PointerEvent, PointerState, TextEvent, WindowEvent};
 use crate::render_root::{RenderRoot, RenderRootOptions, RenderRootSignal, WindowSizePolicy};
+use crate::testing::{screenshots::get_image_diff, snapshot_utils::get_cargo_workspace};
 use crate::tracing_backend::try_init_test_tracing;
 use crate::widget::{WidgetMut, WidgetRef};
 use crate::{Color, Handled, Point, Size, Vec2, Widget, WidgetId};
@@ -241,7 +240,7 @@ impl TestHarness {
     }
 
     fn process_state_after_event(&mut self) {
-        if self.root_widget().state().needs_layout {
+        if self.root_widget().ctx.widget_state.needs_layout {
             self.render_root.root_layout();
         }
     }
@@ -390,7 +389,7 @@ impl TestHarness {
     ///
     /// Combines [`mouse_move`](Self::mouse_move), [`mouse_button_press`](Self::mouse_button_press), and [`mouse_button_release`](Self::mouse_button_release).
     pub fn mouse_click_on(&mut self, id: WidgetId) {
-        let widget_rect = self.get_widget(id).state().window_layout_rect();
+        let widget_rect = self.get_widget(id).ctx().window_layout_rect();
         let widget_center = widget_rect.center();
 
         self.mouse_move(widget_center);
@@ -402,7 +401,7 @@ impl TestHarness {
     pub fn mouse_move_to(&mut self, id: WidgetId) {
         // FIXME - handle case where the widget isn't visible
         // FIXME - assert that the widget correctly receives the event otherwise?
-        let widget_rect = self.get_widget(id).state().window_layout_rect();
+        let widget_rect = self.get_widget(id).ctx().window_layout_rect();
         let widget_center = widget_rect.center();
 
         self.mouse_move(widget_center);
@@ -416,6 +415,23 @@ impl TestHarness {
             let event = TextEvent::Ime(Ime::Commit(c.to_string()));
             self.render_root.handle_text_event(event);
         }
+        self.process_state_after_event();
+    }
+
+    pub fn focus_on(&mut self, id: Option<WidgetId>) {
+        self.render_root.state.next_focused_widget = id;
+        // FIXME - Change this once run_rewrite_passes is merged
+        let mut dummy_state = crate::WidgetState::synthetic(
+            self.render_root.root.id(),
+            self.render_root.get_kurbo_size(),
+        );
+        crate::passes::update::run_update_focus_pass(&mut self.render_root, &mut dummy_state);
+    }
+
+    // TODO - Fold into move_timers_forward
+    /// Send animation events to the widget tree
+    pub fn animate_ms(&mut self, ms: u64) {
+        self.render_root.root_anim_frame(ms * 1_000_000);
         self.process_state_after_event();
     }
 
@@ -457,7 +473,7 @@ impl TestHarness {
     pub fn get_widget(&self, id: WidgetId) -> WidgetRef<'_, dyn Widget> {
         self.render_root
             .get_widget(id)
-            .unwrap_or_else(|| panic!("could not find widget #{}", id.to_raw()))
+            .unwrap_or_else(|| panic!("could not find widget {}", id))
     }
 
     /// Try to return the widget with the given id.

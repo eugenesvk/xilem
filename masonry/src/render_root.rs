@@ -26,13 +26,14 @@ use crate::passes::layout::root_layout;
 use crate::passes::mutate::{mutate_widget, run_mutate_pass};
 use crate::passes::paint::root_paint;
 use crate::passes::recurse_on_children;
+use crate::passes::recurse_on_children;
 use crate::passes::update::{
     run_update_anim_pass, run_update_disabled_pass, run_update_focus_chain_pass,
     run_update_focus_pass, run_update_new_widgets_pass, run_update_pointer_pass,
     run_update_scroll_pass, run_update_stashed_pass,
 };
 use crate::text::TextBrush;
-use crate::tree_arena::{ArenaMut, TreeArena};
+use crate::tree_arena::{ArenaMut, {ArenaMut, TreeArena}};
 use crate::widget::WidgetArena;
 use crate::widget::{WidgetMut, WidgetRef, WidgetState};
 use crate::{
@@ -41,7 +42,6 @@ use crate::{
 
 // --- MARK: STRUCTS ---
 
-// TODO - Remove pub(crate)
 pub struct RenderRoot {
     pub(crate) root: WidgetPod<Box<dyn Widget>>,
     pub(crate) size_policy: WindowSizePolicy,
@@ -103,9 +103,6 @@ pub struct RenderRootOptions {
     pub scale_factor: f64,
 }
 
-// TODO - Handle custom cursors?
-// TODO - handling timers
-// TODO - Text fields
 pub enum RenderRootSignal {
     Action(Action, WidgetId),
     StartIme,
@@ -223,14 +220,11 @@ impl RenderRoot {
                 let last = self.last_anim.take();
                 let elapsed_ns = last.map(|t| now.duration_since(t).as_nanos()).unwrap_or(0) as u64;
 
-                run_update_anim_pass(self, elapsed_ns);
-
-                let mut root_state = self.widget_arena.get_state_mut(self.root.id()).item.clone();
-                self.post_event_processing(&mut root_state);
+                self.root_anim_frame(elapsed_ns);
 
                 // If this animation will continue, store the time.
                 // If a new animation starts, then it will have zero reported elapsed time.
-                let animation_continues = root_state.needs_anim;
+                let animation_continues = self.root_state().needs_anim;
                 self.last_anim = animation_continues.then_some(now);
 
                 Handled::Yes
@@ -250,6 +244,13 @@ impl RenderRoot {
 
     pub fn handle_text_event(&mut self, event: TextEvent) -> Handled {
         self.root_on_text_event(event)
+    }
+
+    pub(crate) fn root_anim_frame(&mut self, elapsed_ns: u64) {
+        run_update_anim_pass(self, elapsed_ns);
+
+        let mut root_state = self.widget_arena.get_state_mut(self.root.id()).item.clone();
+        self.post_event_processing(&mut root_state);
     }
 
     /// Registers all fonts that exist in the given data.
@@ -286,9 +287,6 @@ impl RenderRoot {
     }
 
     pub fn redraw(&mut self) -> (Scene, TreeUpdate) {
-        // TODO - Xilem's reconciliation logic will have to be called
-        // by the function that calls this
-
         if self.root_state().needs_layout {
             self.root_layout();
         }
@@ -297,6 +295,7 @@ impl RenderRoot {
             self.state.emit_signal(RenderRootSignal::RequestRedraw);
         }
 
+        // TODO - Handle invalidation regions
         // TODO - Improve caching of scenes.
         (self.root_paint(), self.root_accessibility())
     }
@@ -434,6 +433,10 @@ impl RenderRoot {
     fn root_on_text_event(&mut self, event: TextEvent) -> Handled {
         let mut dummy_state = WidgetState::synthetic(self.root.id(), self.get_kurbo_size());
 
+        if matches!(event, TextEvent::FocusChange(false)) {
+            root_on_pointer_event(self, &mut dummy_state, &PointerEvent::new_pointer_leave());
+        }
+
         let handled = root_on_text_event(self, &mut dummy_state, &event);
         run_update_focus_pass(self, &mut dummy_state);
 
@@ -518,9 +521,6 @@ impl RenderRoot {
         // If children are changed during the handling of an event,
         // we need to send RouteWidgetAdded now, so that they are ready for update/layout.
         if widget_state.children_changed {
-            // TODO - Update IME handlers
-            // Send TextFieldRemoved signal
-
             run_update_new_widgets_pass(self);
         }
 
@@ -606,6 +606,31 @@ impl RenderRoot {
     }
 
 
+    pub(crate) fn request_render_all(&mut self) {
+        fn request_render_all_in(
+            mut widget: ArenaMut<'_, Box<dyn Widget>>,
+            state: ArenaMut<'_, WidgetState>,
+        ) {
+            state.item.needs_paint = true;
+            state.item.needs_accessibility = true;
+            state.item.request_paint = true;
+            state.item.request_accessibility = true;
+
+            let id = state.item.id;
+            recurse_on_children(
+                id,
+                widget.reborrow_mut(),
+                state.children,
+                |widget, mut state| {
+                    request_render_all_in(widget, state.reborrow_mut());
+                },
+            );
+        }
+
+        let (root_widget, mut root_state) = self.widget_arena.get_pair_mut(self.root.id());
+        request_render_all_in(root_widget, root_state.reborrow_mut());
+    }
+
     // Checks whether the given id points to a widget that is "interactive".
     // i.e. not disabled or stashed.
     // Only interactive widgets can have text focus or pointer capture.
@@ -674,11 +699,3 @@ impl RenderRootSignal {
         )
     }
 }
-
-/*
-TODO:
-- Invalidation regions
-- Timer handling
-- prepare_paint
-- Focus-related stuff
-*/

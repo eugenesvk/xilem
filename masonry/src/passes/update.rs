@@ -6,11 +6,15 @@ use std::collections::HashSet;
 use cursor_icon::CursorIcon;
 use tracing::{info_span, trace};
 
+use crate::passes::event::root_on_pointer_event;
 use crate::passes::{merge_state_up, recurse_on_children};
 use crate::render_root::{RenderRoot, RenderRootSignal, RenderRootState};
 use crate::tree_arena::ArenaMut;
-use crate::{LifeCycle, LifeCycleCtx, RegisterCtx, StatusChange, Widget, WidgetId, WidgetState};
+use crate::{
+    LifeCycle, LifeCycleCtx, PointerEvent, RegisterCtx, StatusChange, Widget, WidgetId, WidgetState,
+};
 
+// --- MARK: HELPERS ---
 fn get_id_path(root: &RenderRoot, widget_id: Option<WidgetId>) -> Vec<WidgetId> {
     let Some(widget_id) = widget_id else {
         return Vec::new();
@@ -73,18 +77,21 @@ fn run_single_update_pass(
     }
 }
 
+// ----------------
+
+// --- MARK: UPDATE POINTER ---
 pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot, root_state: &mut WidgetState) {
     let pointer_pos = root.last_mouse_pos.map(|pos| (pos.x, pos.y).into());
 
-    // -- UPDATE HOVERED WIDGETS --
     // Release pointer capture if target can no longer hold it.
     if let Some(id) = root.state.pointer_capture_target {
         if !root.is_still_interactive(id) {
-            // TODO - Send PointerLeave event
             root.state.pointer_capture_target = None;
+            root_on_pointer_event(root, root_state, &PointerEvent::new_pointer_leave());
         }
     }
 
+    // -- UPDATE HOVERED WIDGETS --
     let mut next_hovered_widget = if let Some(pos) = pointer_pos {
         // TODO - Apply scale?
         root.get_root_widget()
@@ -180,6 +187,7 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot, root_state: &mut Wi
 
 // ----------------
 
+// --- MARK: UPDATE FOCUS ---
 pub(crate) fn run_update_focus_pass(root: &mut RenderRoot, root_state: &mut WidgetState) {
     // If the focused widget is disabled, stashed or removed, we set
     // the focused id to None
@@ -281,6 +289,7 @@ pub(crate) fn run_update_focus_pass(root: &mut RenderRoot, root_state: &mut Widg
 
 // ----------------
 
+// --- MARK: UPDATE DISABLED ---
 fn update_disabled_for_widget(
     global_state: &mut RenderRootState,
     mut widget: ArenaMut<'_, Box<dyn Widget>>,
@@ -337,11 +346,11 @@ pub(crate) fn run_update_disabled_pass(root: &mut RenderRoot) {
 // The stereotypical use case would be the contents of hidden tabs in a "tab group" widget.
 // Scrolled-out widgets are *not* stashed.
 
-#[allow(clippy::only_used_in_recursion)]
+// --- MARK: UPDATE STASHED ---
 fn update_stashed_for_widget(
     global_state: &mut RenderRootState,
     mut widget: ArenaMut<'_, Box<dyn Widget>>,
-    state: ArenaMut<'_, WidgetState>,
+    mut state: ArenaMut<'_, WidgetState>,
     parent_stashed: bool,
 ) {
     let _span = widget.item.make_trace_span().entered();
@@ -353,7 +362,15 @@ fn update_stashed_for_widget(
     }
 
     if stashed != state.item.is_stashed {
-        // TODO - Send update event
+        let mut ctx = LifeCycleCtx {
+            global_state,
+            widget_state: state.item,
+            widget_state_children: state.children.reborrow_mut(),
+            widget_children: widget.children.reborrow_mut(),
+        };
+        widget
+            .item
+            .lifecycle(&mut ctx, &LifeCycle::StashedChanged(stashed));
         state.item.is_stashed = stashed;
         state.item.update_focus_chain = true;
         // Note: We don't need request_repaint because stashing doesn't actually change
@@ -387,6 +404,7 @@ pub(crate) fn run_update_stashed_pass(root: &mut RenderRoot) {
 
 // ----------------
 
+// --- MARK: UPDATE SCROLL ---
 // This pass will update scroll positions in cases where a widget has requested to be
 // scrolled into view (usually a textbox getting text events).
 // Each parent that implements scrolling will update its scroll position to ensure the
@@ -415,6 +433,7 @@ pub(crate) fn run_update_scroll_pass(root: &mut RenderRoot) {
 
 // ----------------
 
+// --- MARK: UPDATE ANIM ---
 fn update_anim_for_widget(
     global_state: &mut RenderRootState,
     mut widget: ArenaMut<'_, Box<dyn Widget>>,
@@ -472,12 +491,14 @@ pub(crate) fn run_update_anim_pass(root: &mut RenderRoot, elapsed_ns: u64) {
 
 // ----------------
 
+// --- MARK: UPDATE TREE ---
 fn update_new_widgets(
     global_state: &mut RenderRootState,
     mut widget: ArenaMut<'_, Box<dyn Widget>>,
     mut state: ArenaMut<'_, WidgetState>,
 ) {
     let _span = widget.item.make_trace_span().entered();
+    let id = state.item.id;
 
     if !state.item.children_changed {
         return;
@@ -488,10 +509,42 @@ fn update_new_widgets(
         let mut ctx = RegisterCtx {
             widget_state_children: state.children.reborrow_mut(),
             widget_children: widget.children.reborrow_mut(),
+            #[cfg(debug_assertions)]
+            registered_ids: Vec::new(),
         };
         // The widget will call `RegisterCtx::register_child` on all its children,
         // which will add the new widgets to the arena.
         widget.item.register_children(&mut ctx);
+
+        #[cfg(debug_assertions)]
+        {
+            let children_ids = widget.item.children_ids();
+            for child_id in ctx.registered_ids {
+                if !children_ids.contains(&child_id) {
+                    panic!(
+                        "Error in '{}' #{}: method register_children() called \
+                        RegisterCtx::register_child() on child #{}, which isn't \
+                        in the list returned by children_ids()",
+                        widget.item.short_type_name(),
+                        id.to_raw(),
+                        child_id.to_raw()
+                    );
+                }
+            }
+        }
+
+        #[cfg(debug_assertions)]
+        for child_id in widget.item.children_ids() {
+            if widget.children.get_child(child_id.to_raw()).is_none() {
+                panic!(
+                    "Error in '{}' #{}: method register_children() did not call \
+                    RegisterCtx::register_child() on child #{} returned by children_ids()",
+                    widget.item.short_type_name(),
+                    id.to_raw(),
+                    child_id.to_raw()
+                );
+            }
+        }
     }
 
     if state.item.is_new {
@@ -511,7 +564,6 @@ fn update_new_widgets(
 
     // We can recurse on this widget's children, because they have already been added
     // to the arena above.
-    let id = state.item.id;
     let parent_state = state.item;
     recurse_on_children(
         id,
@@ -531,6 +583,8 @@ pub(crate) fn run_update_new_widgets_pass(root: &mut RenderRoot) {
         let mut ctx = RegisterCtx {
             widget_state_children: root.widget_arena.widget_states.root_token_mut(),
             widget_children: root.widget_arena.widgets.root_token_mut(),
+            #[cfg(debug_assertions)]
+            registered_ids: Vec::new(),
         };
         ctx.register_child(&mut root.root);
     }
@@ -540,6 +594,8 @@ pub(crate) fn run_update_new_widgets_pass(root: &mut RenderRoot) {
 }
 
 // ----------------
+
+// --- MARK: UPDATE FOCUS CHAIN ---
 
 // TODO https://github.com/linebender/xilem/issues/376 - Some implicit invariants:
 // - A widget only receives BuildFocusChain if none of its parents are hidden.

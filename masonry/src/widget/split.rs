@@ -5,7 +5,7 @@
 
 use accesskit::{NodeBuilder, Role};
 use smallvec::{smallvec, SmallVec};
-use tracing::{trace, trace_span, warn, Span};
+use tracing::{trace_span, warn, Span};
 use vello::Scene;
 
 use crate::dpi::LogicalPosition;
@@ -405,7 +405,7 @@ impl Widget for Split {
                 }
                 PointerEvent::PointerMove(state) => {
                     if ctx.has_pointer_capture() {
-                        // If active, assume always hover/hot
+                        // If widget has pointer capture, assume always it's hovered
                         let effective_pos = match self.split_axis {
                             Axis::Horizontal => {
                                 Point::new(state.position.x - self.click_offset, state.position.y)
@@ -543,7 +543,6 @@ impl Widget for Split {
         let insets = paint_rect - my_size.to_rect();
         ctx.set_paint_insets(insets);
 
-        trace!("Computed layout: size={}, insets={:?}", my_size, insets);
         my_size
     }
 
