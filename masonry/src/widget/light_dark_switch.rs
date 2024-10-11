@@ -1,5 +1,4 @@
 
-use std::borrow::Borrow;
 
 use accesskit::{DefaultActionVerb, NodeBuilder, Role, Toggled};
 use smallvec::{smallvec, SmallVec};
@@ -8,6 +7,7 @@ use vello::kurbo::Size;
 use vello::Scene;
 use crate::action::Action;
 use crate::widget::WidgetMut;
+use rand::{thread_rng, Rng};
 
 use crate::{
     theme, AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, LifeCycleCtx, PaintCtx, PointerButton, PointerEvent, RegisterCtx, StatusChange, TextEvent, Widget, WidgetId, WidgetPod, ArcStr
@@ -34,16 +34,16 @@ impl LightDarkSwitch {
 // --- MARK: WIDGETMUT ---
 impl WidgetMut<'_, LightDarkSwitch> {
     pub fn switch_mode(&mut self, dark_mode: bool) {
+        let mut rng = thread_rng();
+        let n: usize = rng.gen_range(0..7);
         self.widget.dark_mode = dark_mode;
-        let i = if self.widget.dark_mode {
+        if self.widget.dark_mode {
             self.set_text("Switch to LIGHT mode".into());
-            4
         }
         else {
             self.set_text("Switch to DARK mode".into());
-            6
         };
-        self.ctx.switch_theme(i);
+        self.ctx.switch_theme(n);
         self.ctx.invert_mode();
         self.ctx.request_paint();
         self.ctx.request_accessibility_update();
@@ -60,10 +60,12 @@ impl Widget for LightDarkSwitch {
     fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {
         match event {
             PointerEvent::PointerUp(_, _) => {
+                dbg!(ctx.widget_id());
                 if ctx.hovered() && !ctx.is_disabled() {
-                ctx.submit_action(Action::CheckboxChecked(self.dark_mode));
-                ctx.request_accessibility_update();
-                trace!("Checkbox {:?} released", ctx.widget_id());
+                    ctx.submit_action(Action::CheckboxChecked(self.dark_mode));
+                    //ctx.submit_action(Action::ModeSwitched(PointerButton::None, self.dark_mode));
+                    ctx.request_accessibility_update();
+                    trace!("light_dark_switch {:?} released", ctx.widget_id());
                 }
             }
             _ => (),
@@ -79,7 +81,7 @@ impl Widget for LightDarkSwitch {
         if event.target == ctx.widget_id() {
             match event.action {
                 accesskit::Action::Default => {
-                    ctx.submit_action(Action::ButtonPressed(PointerButton::Primary));
+                    ctx.submit_action(Action::ModeSwitched(PointerButton::None, self.dark_mode));
                     ctx.request_paint();
                 }
                 _ => {}

@@ -18,6 +18,7 @@ pub enum Action {
     TextChanged(String),
     TextEntered(String),
     CheckboxChecked(bool),
+    ModeSwitched(PointerButton, bool),
     // FIXME - This is a huge hack
     Other(Box<dyn Any + Send>),
 }
@@ -29,6 +30,7 @@ impl PartialEq for Action {
             (Self::TextChanged(l0), Self::TextChanged(r0)) => l0 == r0,
             (Self::TextEntered(l0), Self::TextEntered(r0)) => l0 == r0,
             (Self::CheckboxChecked(l0), Self::CheckboxChecked(r0)) => l0 == r0,
+            (Self::ModeSwitched(l0, l1), Self::ModeSwitched(r0, r1)) => (l0, l1) == (r0, r1),
             // FIXME
             // (Self::Other(val_l), Self::Other(val_r)) => false,
             _ => false,
@@ -43,6 +45,7 @@ impl std::fmt::Debug for Action {
             Self::TextChanged(text) => f.debug_tuple("TextChanged").field(text).finish(),
             Self::TextEntered(text) => f.debug_tuple("TextEntered").field(text).finish(),
             Self::CheckboxChecked(b) => f.debug_tuple("CheckboxChecked").field(b).finish(),
+            Self::ModeSwitched(_button, dark_mode) => f.debug_tuple("ModeSwitched").field(dark_mode).finish(),
             Self::Other(_) => write!(f, "Other(...)"),
         }
     }

@@ -9,8 +9,7 @@ use std::time::Duration;
 use xilem::{
     tokio::time,
     view::{
-        button, light_dark_switch, button_any_pointer, checkbox, flex, label, prose, task, textbox, Axis,
-        FlexExt as _, FlexSpacer,
+        button, button_any_pointer, checkbox, flex, label, light_dark_switch, prose, sized_box, task, textbox, Axis, FlexExt as _, FlexSpacer
     },
     Color, EventLoop, EventLoopBuilder, TextAlignment, WidgetView, Xilem,
 };
@@ -18,6 +17,12 @@ const LOREM: &str = r"Lorem ipsum dolor sit amet, consectetur adipiscing elit. M
 
 Phasellus in viverra dolor, vitae facilisis est. Maecenas malesuada massa vel ultricies feugiat. Vivamus venenatis et nibh nec pharetra. Phasellus vestibulum elit enim, nec scelerisque orci faucibus id. Vivamus consequat purus sit amet orci egestas, non iaculis massa porttitor. Vestibulum ut eros leo. In fermentum convallis magna in finibus. Donec justo leo, maximus ac laoreet id, volutpat ut elit. Mauris sed leo non neque laoreet faucibus. Aliquam orci arcu, faucibus in molestie eget, ornare non dui. Donec volutpat nulla in fringilla elementum. Aliquam vitae ante egestas ligula tempus vestibulum sit amet sed ante. ";
 
+
+fn light_dark(data: bool) -> impl WidgetView<bool> {
+    light_dark_switch(data, |data, new_state| {
+        *data = new_state;
+    })
+}
 fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> {
     // here's some logic, deriving state for the view from our state
     let count = data.count;
@@ -59,8 +64,11 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> {
         }
     });
 
-    fork(
+    let fork = fork(
         flex((
+            flex(light_dark_switch(
+                data.dark_mode, |data: &mut AppData, new_state| {
+                data.dark_mode = new_state;},)),
             flex((
                 label("Label")
                     .brush(Color::REBECCA_PURPLE)
@@ -111,7 +119,8 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> {
                 },
             )
         }),
-    )
+    );
+    sized_box(fork)
 }
 
 fn toggleable(data: &mut AppData) -> impl WidgetView<AppData> {

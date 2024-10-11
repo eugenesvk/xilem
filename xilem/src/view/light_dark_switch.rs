@@ -72,19 +72,23 @@ where
     ) -> MessageResult<Action> {
         debug_assert!(
             id_path.is_empty(),
-            "id path should be empty in Button::message"
+            "id path should be empty in LightDarkSwitch::message"
         );
         match message.downcast::<masonry::Action>() {
             Ok(action) => {
                 if let masonry::Action::CheckboxChecked(dark_mode) = *action {
                     MessageResult::Action((self.callback)(app_state, !dark_mode))
-                } else {
-                    tracing::error!("Wrong action type in Checkbox::message: {action:?}");
+                }
+                // if let masonry::Action::ModeSwitched(_button, dark_mode) = *action {
+                //     MessageResult::Action((self.callback)(app_state, !dark_mode))
+                // }
+                else {
+                    tracing::error!("Wrong action type in LightDarkSwitch::message: {action:?}");
                     MessageResult::Stale(action)
                 }
             }
             Err(message) => {
-                tracing::error!("Wrong message type in Checkbox::message");
+                tracing::error!("Wrong message type in LightDarkSwitch::message");
                 MessageResult::Stale(message)
             }
         }

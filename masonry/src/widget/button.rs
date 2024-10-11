@@ -97,6 +97,7 @@ impl Widget for Button {
     fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {
         match event {
             PointerEvent::PointerDown(_, _) => {
+                dbg!(ctx.widget_id());
                 if !ctx.is_disabled() {
                     ctx.capture_pointer();
                     ctx.request_paint();

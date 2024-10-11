@@ -106,6 +106,7 @@ clippy.unseparated_literal_suffix = "warn"
 xilem_colors = { version = "0.1.0", path = "xilem_colors" }
 masonry = { version = "0.2.0", path = "masonry" }
 xilem_core = { version = "0.1.0", path = "xilem_core" }
+interpoli = { git = "https://github.com/linebender/interpoli" }
 vello = "0.2.1"
 wgpu = "0.20.1"
 kurbo = "0.11.0"
@@ -122,3 +123,4 @@ accesskit = "0.16.0"
 accesskit_winit = "0.22.0"
 nv-flip = "0.1.2"
 time = "0.3.36"
+rand = "0.8.5"

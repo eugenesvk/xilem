@@ -2,7 +2,6 @@ use crate::apca::estimate_lc;
 use palette::{LinSrgb, Okhsl, Srgb, FromColor, IntoColor};
 use peniko::Color;
 
-
 #[derive(Default, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum TokenColor {
     #[default]

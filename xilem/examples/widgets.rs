@@ -43,12 +43,6 @@ fn progress_bar_view(data: Option<f64>) -> impl WidgetView<Option<f64>> {
     ))
 }
 
-// fn light_dark(data: bool) -> impl WidgetView<bool> {
-//     light_dark_switch(data, |data| {
-//         *data = new_state;
-//     })
-// }
-
 fn light_dark(data: bool) -> impl WidgetView<bool> {
     light_dark_switch(data, |data, new_state| {
         *data = new_state;

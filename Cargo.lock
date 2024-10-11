@@ -1845,6 +1845,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "interpoli"
+version = "0.1.0"
+source = "git+https://github.com/linebender/interpoli#fbf3c7fde83d0d0dbc2a07241275a230350c2a2a"
+dependencies = [
+ "hashbrown",
+ "keyframe",
+ "kurbo",
+ "peniko",
+]
+
+[[package]]
 name = "io-lifetimes"
 version = "1.0.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1908,6 +1919,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "keyframe"
+version = "1.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "60708bf7981518d09095d6f5673ce5cf6a64f1e0d9708b554f670e6d9d2bd9a9"
+dependencies = [
+ "num-traits",
+]
+
+[[package]]
 name = "khronos-egl"
 version = "6.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1965,6 +1985,12 @@ dependencies = [
  "cfg-if",
  "windows-targets 0.52.6",
 ]
+
+[[package]]
+name = "libm"
+version = "0.2.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4ec2a862134d2a7d32d7983ddcdd1c4923530833c9f2ea1a44fc5fa473989058"
 
 [[package]]
 name = "libredox"
@@ -2063,6 +2089,7 @@ dependencies = [
  "parley",
  "pollster",
  "profiling",
+ "rand",
  "serde",
  "serde_json",
  "smallvec",
@@ -2272,6 +2299,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "071dfc062690e90b734c0b2273ce72ad0ffa95f0c74596bc250dcfd960262841"
 dependencies = [
  "autocfg",
+ "libm",
 ]
 
 [[package]]
@@ -5000,6 +5028,7 @@ dependencies = [
 name = "xilem_colors"
 version = "0.1.0"
 dependencies = [
+ "interpoli",
  "palette",
  "peniko",
  "xilem_core",
