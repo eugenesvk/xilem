@@ -250,7 +250,7 @@ impl Widget for Label {
     fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
         let colors = ctx.get_colortokens();
         if let Some(token) = self.token {
-            self.text_layout.set_brush(colors.set_token(token));
+            self.text_layout.set_brush(colors.set_color(token));
         }
         else {
             self.text_layout.set_brush(colors.low_contrast_text);

@@ -93,7 +93,7 @@ impl ColorTokens {
         }
     }
 
-    pub fn set_token(&self, token: TokenColor) -> Color {
+    pub fn set_color(&self, token: TokenColor) -> Color {
         match token {
             TokenColor::AppBackground => self.app_background,
             TokenColor::SubtleBackground => self.subtle_background,

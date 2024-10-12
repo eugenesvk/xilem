@@ -380,7 +380,7 @@ impl Widget for SizedBox {
             );
         });
         let border_color = match self.border_color {
-            Some(token) => colors.set_token(token),
+            Some(token) => colors.set_color(token),
             None => Color::TRANSPARENT
         };
         let border_width = self.border_width;
