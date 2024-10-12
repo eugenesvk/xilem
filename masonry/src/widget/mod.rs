@@ -32,6 +32,7 @@ mod textbox;
 mod variable_label;
 mod widget_arena;
 mod light_dark_switch;
+mod themer;
 
 pub use self::image::Image;
 pub use align::Align;
