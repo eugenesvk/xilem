@@ -4,11 +4,32 @@ pub mod tokens;
 pub mod utils;
 
 use scales::Scales;
-use tokens::{ColorPreset, ColorTokens};
+use tokens::{ColorPreset, ColorTokens, TokenColor};
 use utils::THEMES;
 //use xilem_core::{View, ViewMarker};
 //use interpoli::
 
+#[derive(Debug, Clone)]
+pub struct ColorStyle {
+    pub bg: TokenColor,
+    pub hov_bg: TokenColor,
+    pub border: TokenColor,
+    pub hov_border: TokenColor,
+    pub bg_grad: [TokenColor; 2],
+    pub hov_bg_grad: [TokenColor; 2]
+}
+
+impl std::default::Default for ColorStyle {
+    fn default() -> Self {
+        Self { 
+            bg: TokenColor::AppBackground, 
+            hov_bg: TokenColor::SubtleBackground, 
+            border: TokenColor::SubtleBordersAndSeparators, 
+            hov_border: TokenColor::HoveredUiElementBorder, 
+            bg_grad: [TokenColor::AppBackground, TokenColor::SubtleBackground], 
+            hov_bg_grad:  [TokenColor::SubtleBackground, TokenColor::UiElementBackground]}
+    }
+}
 
 #[derive(Debug, Default, Clone)]
 pub struct Colorix {

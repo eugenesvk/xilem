@@ -2,12 +2,14 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use masonry::widget;
+use xilem_colors::ColorStyle;
 use xilem_core::{Mut, ViewMarker};
 
 use crate::{MessageResult, Pod, View, ViewCtx, ViewId};
 
 pub fn light_dark_switch<F, State, Action>(
     dark_mode: bool,
+    style: ColorStyle,
     callback: F,
 ) -> LightDarkSwitch<F>
 where
@@ -16,6 +18,7 @@ where
     LightDarkSwitch {
         callback,
         dark_mode,
+        style,
     }
 }
 
@@ -23,6 +26,13 @@ where
 pub struct LightDarkSwitch<F> {
     dark_mode: bool,
     callback: F,
+    style: ColorStyle,
+}
+
+impl<F> LightDarkSwitch<F> {
+    fn set_style(&mut self, new_style: ColorStyle) {
+        self.style = new_style
+    }
 }
 
 impl<F> ViewMarker for LightDarkSwitch<F> {}
@@ -35,8 +45,7 @@ where
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         ctx.with_leaf_action_widget(|ctx| {
-            ctx.new_pod(masonry::widget::LightDarkSwitch::new(
-            ))
+            ctx.new_pod(masonry::widget::LightDarkSwitch::new())
         })
     }
 

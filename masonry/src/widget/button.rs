@@ -6,11 +6,12 @@
 use accesskit::{DefaultActionVerb, NodeBuilder, Role};
 use smallvec::{smallvec, SmallVec};
 use tracing::{trace, trace_span, Span};
+use vello::peniko::Color;
 use vello::Scene;
 use xilem_colors::tokens::TokenColor;
+use xilem_colors::ColorStyle;
 
 use crate::action::Action;
-use crate::event::PointerButton;
 use crate::paint_scene_helpers::{fill_lin_gradient, stroke, UnitPoint};
 use crate::widget::{Label, WidgetMut, WidgetPod};
 
@@ -31,6 +32,7 @@ pub struct Button {
     label: WidgetPod<Label>,
     has_color_on_select: bool,
     pub selected: bool,
+    style: ColorStyle,
 }
 
 // --- MARK: BUILDERS ---
@@ -64,10 +66,15 @@ impl Button {
             label: WidgetPod::new(label.with_skip_pointer(true)),
             has_color_on_select: false,
             selected: false,
+            style: ColorStyle::default(),
         }
     }
     pub fn colored_select(mut self) -> Self {
         self.has_color_on_select = true;
+        self
+    }
+    pub fn set_style(mut self, new_style: ColorStyle) -> Self {
+        self.style = new_style;
         self
     }
 }
@@ -90,6 +97,9 @@ impl WidgetMut<'_, Button> {
     pub fn unselected(&mut self) {
         self.widget.selected = false
     }
+    pub fn set_style(&mut self, new_style: ColorStyle) {
+        self.widget.style = new_style
+    }
 }
 
 // --- MARK: IMPL WIDGET ---
@@ -97,7 +107,6 @@ impl Widget for Button {
     fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {
         match event {
             PointerEvent::PointerDown(_, _) => {
-                dbg!(ctx.widget_id());
                 if !ctx.is_disabled() {
                     ctx.capture_pointer();
                     ctx.request_paint();
@@ -123,7 +132,7 @@ impl Widget for Button {
         if event.target == ctx.widget_id() {
             match event.action {
                 accesskit::Action::Default => {
-                    ctx.submit_action(Action::ButtonPressed(PointerButton::Primary));
+                    //ctx.submit_action(Action::ButtonPressed(PointerButton::Primary));
                     ctx.request_paint();
                 }
                 _ => {}
@@ -169,7 +178,8 @@ impl Widget for Button {
         let hovered = ctx.hovered();
         let size = ctx.size();
         let (border_color, stroke_width) = if hovered && !ctx.is_disabled() {
-            (tokens.hovered_ui_element_border, 3.)
+            //(tokens.hovered_ui_element_border, 3.)
+            (tokens.set_color(self.style.hov_border), 3.)
         } else {
             (tokens.subtle_borders_and_separators, 1.)
         };
@@ -201,7 +211,9 @@ impl Widget for Button {
         else if is_active {
             [tokens.app_background, tokens.solid_backgrounds]
         } else if hovered {
-                [tokens.subtle_background, tokens.ui_element_background]
+                let grad = self.style.hov_bg_grad;
+                [tokens.set_color(grad[0]), tokens.set_color(grad[1])]
+                //[tokens.subtle_background, tokens.ui_element_background]
         } else {
             [tokens.app_background, tokens.subtle_background]
         };
@@ -256,6 +268,7 @@ mod tests {
     use crate::assert_render_snapshot;
     use crate::testing::{widget_ids, TestHarness, TestWidgetExt};
     use crate::theme::PRIMARY_LIGHT;
+    use crate::event::PointerButton;
 
     #[test]
     fn simple_button() {

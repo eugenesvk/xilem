@@ -9,7 +9,9 @@ use winit::error::EventLoopError;
 use winit::window::Window;
 use xilem::core::adapt;
 use xilem::view::{button, checkbox, flex, flex_item, light_dark_switch, progress_bar, sized_box, Axis, FlexSpacer};
-use xilem::{WidgetView, Xilem};
+use xilem::{Color, WidgetView, Xilem};
+use xilem_colors::tokens::TokenColor;
+use xilem_colors::ColorStyle;
 
 const SPACER_WIDTH: f64 = 10.;
 
@@ -42,9 +44,10 @@ fn progress_bar_view(data: Option<f64>) -> impl WidgetView<Option<f64>> {
         }),
     ))
 }
-
 fn light_dark(data: bool) -> impl WidgetView<bool> {
-    light_dark_switch(data, |data, new_state| {
+    let mut new_style = ColorStyle::default();
+    new_style.bg_grad = [TokenColor::Custom(Color::RED), TokenColor::Custom(Color::AZURE)];
+    light_dark_switch(data, new_style, |data, new_state| {
         *data = new_state;
     })
 }
