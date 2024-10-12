@@ -5,13 +5,14 @@ use masonry::widget::{CrossAxisAlignment, GridParams, MainAxisAlignment};
 use winit::dpi::LogicalSize;
 use winit::error::EventLoopError;
 use winit::window::Window;
-use xilem::view::{grid, Flex, FlexSequence, FlexSpacer, GridExt, GridSequence};
+use xilem::view::{grid, light_dark_switch, Flex, FlexSequence, FlexSpacer, GridExt, GridSequence};
 use xilem::EventLoopBuilder;
 use xilem::{
     view::{button, flex, label, sized_box, Axis},
     EventLoop, WidgetView, Xilem,
 };
 use xilem_colors::tokens::TokenColor;
+use xilem_colors::ColorStyle;
 
 #[derive(Copy, Clone)]
 enum MathOperator {
@@ -47,6 +48,7 @@ struct Calculator {
     numbers: [String; 2],
     result: Option<String>,
     operation: Option<MathOperator>,
+    dark_mode: bool,
 }
 
 impl Calculator {
@@ -227,10 +229,11 @@ fn app_logic(data: &mut Calculator) -> impl WidgetView<Calculator> {
             expanded_button("±", Calculator::negate).grid_pos(0, 5),
             digit_button("0").grid_pos(1, 5),
             digit_button(".").grid_pos(2, 5),
-            expanded_button("=", Calculator::on_equals).grid_pos(3, 5),
+            expanded_button("=", Calculator::on_equals).grid_pos(3, 5), 
+            light_dark(data.dark_mode).grid_item(GridParams::new(1, 6, 2, 1)),          
         ),
         4,
-        6,
+        7,
     )
     .spacing(GRID_GAP)
 }
@@ -274,6 +277,13 @@ fn digit_button(digit: &'static str) -> impl WidgetView<Calculator> {
     })
 }
 
+fn light_dark(mode: bool) -> impl WidgetView<Calculator> {
+    let style = ColorStyle::default();
+    light_dark_switch(mode, style, |data: &mut Calculator, new_state| {
+        data.dark_mode = new_state;
+    })
+}
+
 fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
     let data = Calculator {
         current_num_index: 0,
@@ -281,6 +291,7 @@ fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
         numbers: ["".into(), "".into()],
         result: None,
         operation: None,
+        dark_mode: true,
     };
 
     let app = Xilem::new(data, app_logic);
