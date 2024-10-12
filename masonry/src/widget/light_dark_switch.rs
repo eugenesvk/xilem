@@ -5,6 +5,7 @@ use smallvec::{smallvec, SmallVec};
 use tracing::{trace, trace_span, Span};
 use vello::kurbo::Size;
 use vello::Scene;
+use xilem_colors::ColorStyle;
 use crate::action::Action;
 use crate::widget::WidgetMut;
 use rand::{thread_rng, Rng};
@@ -19,6 +20,7 @@ use super::{Button, Label};
 pub struct LightDarkSwitch {
     button: WidgetPod<Button>,
     dark_mode: bool,
+    style: ColorStyle,
 }
 
 impl LightDarkSwitch {
@@ -26,8 +28,12 @@ impl LightDarkSwitch {
     pub fn new() -> LightDarkSwitch {
         LightDarkSwitch {
             button: WidgetPod::new(Button::from_label(Label::new("Switch to LIGHT mode").with_skip_pointer(true))),
-            dark_mode: true
+            dark_mode: true,
+            style: ColorStyle::default(),
         }
+    }
+    pub fn set_style(&mut self, new_style: ColorStyle) {
+        self.style = new_style
     }
 }
 
@@ -59,6 +65,10 @@ impl WidgetMut<'_, LightDarkSwitch> {
 impl Widget for LightDarkSwitch {
     fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {
         match event {
+            PointerEvent::PointerDown(_, _) => {
+                ctx.capture_pointer();
+                ctx.release_pointer();
+            }
             PointerEvent::PointerUp(_, _) => {
                 dbg!(ctx.widget_id());
                 if ctx.hovered() && !ctx.is_disabled() {
