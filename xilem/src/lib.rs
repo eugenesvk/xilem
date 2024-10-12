@@ -17,6 +17,7 @@ use winit::{
     error::EventLoopError,
     window::{Window, WindowAttributes},
 };
+use xilem_colors::{tokens::ColorTokens, Colorix};
 use xilem_core::{
     AsyncCtx, MessageResult, RawProxy, SuperElement, View, ViewElement, ViewId, ViewPathTracker,
     ViewSequence,
@@ -134,6 +135,7 @@ where
             view_tree_changed: false,
             proxy,
             runtime: self.runtime,
+            //colors: Colorix::init(),
         };
         let (pod, view_state) = first_view.build(&mut ctx);
         let root_widget = RootWidget::from_pod(pod.inner);
@@ -244,6 +246,7 @@ pub struct ViewCtx {
     view_tree_changed: bool,
     proxy: Arc<dyn RawProxy>,
     runtime: tokio::runtime::Runtime,
+    //colors: Colorix,
 }
 
 impl ViewPathTracker for ViewCtx {
@@ -301,6 +304,9 @@ impl ViewCtx {
     pub fn runtime(&self) -> &tokio::runtime::Runtime {
         &self.runtime
     }
+    // pub fn get_colortokens(&self) -> ColorTokens {
+    //     self.colors.tokens
+    // }
 }
 
 impl AsyncCtx for ViewCtx {
