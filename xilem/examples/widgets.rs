@@ -8,7 +8,7 @@ use masonry::event_loop_runner::{EventLoop, EventLoopBuilder};
 use winit::error::EventLoopError;
 use winit::window::Window;
 use xilem::core::adapt;
-use xilem::view::{button, checkbox, flex, flex_item, light_dark_switch, progress_bar, sized_box, Axis, FlexSpacer};
+use xilem::view::{button, checkbox, flex, flex_item, dark_light_switch, progress_bar, sized_box, Axis, FlexSpacer};
 use xilem::{Color, WidgetView, Xilem};
 use xilem_colors::tokens::TokenColor;
 use xilem_colors::ColorStyle;
@@ -45,11 +45,11 @@ fn progress_bar_view(data: Option<f64>) -> impl WidgetView<Option<f64>> {
     ))
 }
 fn light_dark(data: bool) -> impl WidgetView<bool> {
-    let mut new_style = ColorStyle::default();
-    new_style.bg_grad = [TokenColor::Custom(Color::RED), TokenColor::Custom(Color::AZURE)];
-    light_dark_switch(data, new_style, |data, new_state| {
+    // let mut new_style = ColorStyle::default();
+    // new_style.active_bg_grad = [TokenColor::Custom(Color::RED), TokenColor::Custom(Color::RED)];
+    dark_light_switch(data, |data, new_state| {
         *data = new_state;
-    })
+    })//.set_style(new_style)
 }
 
 fn checkbox_view(data: bool) -> impl WidgetView<bool> {

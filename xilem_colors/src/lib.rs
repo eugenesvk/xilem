@@ -9,14 +9,15 @@ use utils::THEMES;
 //use xilem_core::{View, ViewMarker};
 //use interpoli::
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ColorStyle {
     pub bg: TokenColor,
     pub hov_bg: TokenColor,
     pub border: TokenColor,
     pub hov_border: TokenColor,
     pub bg_grad: [TokenColor; 2],
-    pub hov_bg_grad: [TokenColor; 2]
+    pub hov_bg_grad: [TokenColor; 2],
+    pub active_bg_grad: [TokenColor; 2],
 }
 
 impl std::default::Default for ColorStyle {
@@ -27,7 +28,8 @@ impl std::default::Default for ColorStyle {
             border: TokenColor::SubtleBordersAndSeparators, 
             hov_border: TokenColor::HoveredUiElementBorder, 
             bg_grad: [TokenColor::AppBackground, TokenColor::SubtleBackground], 
-            hov_bg_grad:  [TokenColor::SubtleBackground, TokenColor::UiElementBackground]}
+            hov_bg_grad: [TokenColor::SubtleBackground, TokenColor::UiElementBackground],
+            active_bg_grad: [TokenColor::AppBackground, TokenColor::SolidBackgrounds],}
     }
 }
 

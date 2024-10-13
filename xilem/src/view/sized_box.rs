@@ -6,6 +6,7 @@ use std::marker::PhantomData;
 use masonry::widget;
 use vello::kurbo::RoundedRectRadii;
 use vello::peniko::{Brush, Color};
+use xilem_colors::ColorStyle;
 use xilem_core::ViewMarker;
 
 
@@ -30,10 +31,11 @@ where
         width: None,
         background: None,
         //border: None,
-        border_color: None,
-        border_width: 0.,
+        border_color: TokenColor::Transparent,
+        border_width: 5.,
         corner_radius: RoundedRectRadii::from_single_radius(0.0),
         phantom: PhantomData,
+        style: ColorStyle::default(),
     }
 }
 
@@ -42,10 +44,11 @@ pub struct SizedBox<V, State, Action = ()> {
     width: Option<f64>,
     height: Option<f64>,
     background: Option<Brush>,
-    border_color: Option<TokenColor>,
+    border_color: TokenColor,
     border_width: f64,
     //border: Option<BorderStyle>,
     corner_radius: RoundedRectRadii,
+    style: ColorStyle,
     phantom: PhantomData<fn() -> (State, Action)>,
 }
 
@@ -103,8 +106,13 @@ impl<V, State, Action> SizedBox<V, State, Action> {
         self
     }
 
+    pub fn style(mut self, new_style: ColorStyle) -> Self {
+        self.style = new_style;
+        self
+    }
+
     /// Builder-style method for painting a border around the widget with a color and width.
-    pub fn border(mut self, color: Option<TokenColor>, width: impl Into<f64>) -> Self {
+    pub fn border(mut self, color: TokenColor, width: impl Into<f64>) -> Self {
         self.border_color = color;
         self.border_width = width.into();
         self
@@ -132,13 +140,15 @@ where
         let mut widget = widget::SizedBox::new_pod(child.inner.boxed())
             .raw_width(self.width)
             .raw_height(self.height)
-            .rounded(self.corner_radius);
+            .rounded(self.corner_radius)
+            .style(self.style.clone());
         if let Some(background) = &self.background {
             widget = widget.background(background.clone());
         }
-        if let Some(_) = &self.border_color {
-            widget = widget.border(self.border_color, self.border_width);
-        }
+        // if let Some(_) = &self.border_color {
+        //     widget = widget.border(self.border_color, self.border_width);
+        // }
+        widget = widget.border(self.border_color, self.border_width);
         (ctx.new_pod(widget), child_state)
     }
 
@@ -167,11 +177,12 @@ where
                 None => element.clear_background(),
             }
         }
+        if self.style != prev.style {
+            dbg!(&self.style);
+            element.set_style(self.style.clone())
+        }
         if self.border_color != prev.border_color {
-            match &self.border_color {
-                Some(border) => element.set_border(Some(*border), self.border_width),
-                None => element.clear_border(),
-            }
+            element.set_border(self.border_color, self.border_width);
         }
         if self.corner_radius != prev.corner_radius {
             element.set_rounded(self.corner_radius);

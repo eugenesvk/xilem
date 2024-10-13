@@ -31,14 +31,14 @@ mod split;
 mod textbox;
 mod variable_label;
 mod widget_arena;
-mod light_dark_switch;
+mod dark_light_switch;
 mod themer;
 
 pub use self::image::Image;
 pub use align::Align;
 pub use button::Button;
 pub use checkbox::Checkbox;
-pub use light_dark_switch::LightDarkSwitch;
+pub use dark_light_switch::DarkLightSwitch;
 pub use flex::{Axis, CrossAxisAlignment, Flex, FlexParams, MainAxisAlignment};
 pub use grid::{Grid, GridParams};
 pub use label::{Label, LineBreaking};

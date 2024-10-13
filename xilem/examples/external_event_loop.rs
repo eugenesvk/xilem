@@ -23,13 +23,17 @@ use xilem::{
     view::{button, flex, label, sized_box, Axis},
     EventLoop, MasonryProxy, WidgetView, Xilem,
 };
+use xilem_colors::{tokens::TokenColor, ColorStyle};
 
 /// A component to make a bigger than usual button
 fn big_button(
     label: impl Into<ArcStr>,
     callback: impl Fn(&mut i32) + Send + Sync + 'static,
 ) -> impl WidgetView<i32> {
-    sized_box(button(label, callback)).width(40.).height(40.)
+    let mut new_style = ColorStyle::default();
+    new_style.border = TokenColor::Custom(Color::RED);
+    sized_box(button(label, callback)).width(40.).height(40.)//.border(TokenColor::Custom(Color::RED), 5.)
+        .style(new_style)
 }
 
 fn app_logic(data: &mut i32) -> impl WidgetView<i32> {

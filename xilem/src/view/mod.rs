@@ -48,5 +48,5 @@ pub use textbox::*;
 mod portal;
 pub use portal::*;
 
-mod light_dark_switch;
-pub use light_dark_switch::*;
+mod dark_light_switch;
+pub use dark_light_switch::*;

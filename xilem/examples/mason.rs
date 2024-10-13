@@ -9,7 +9,7 @@ use std::time::Duration;
 use xilem::{
     tokio::time,
     view::{
-        button, button_any_pointer, checkbox, flex, label, light_dark_switch, prose, sized_box, task, textbox, Axis, FlexExt as _, FlexSpacer
+        button, button_any_pointer, checkbox, flex, label, dark_light_switch, prose, sized_box, task, textbox, Axis, FlexExt as _, FlexSpacer
     },
     Color, EventLoop, EventLoopBuilder, TextAlignment, WidgetView, Xilem,
 };
@@ -66,8 +66,8 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> {
 
     let fork = fork(
         flex((
-            flex(light_dark_switch(
-                data.dark_mode, ColorStyle::default(), |data: &mut AppData, new_state| {
+            flex(dark_light_switch(
+                data.dark_mode, |data: &mut AppData, new_state| {
                 data.dark_mode = new_state;},)),
             flex((
                 label("Label")

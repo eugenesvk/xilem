@@ -9,7 +9,7 @@
 
 use masonry::app_driver::{AppDriver, DriverCtx};
 use masonry::dpi::LogicalSize;
-use masonry::widget::{Button, Flex, Label, LightDarkSwitch, RootWidget, SizedBox};
+use masonry::widget::{Button, Flex, Label, DarkLightSwitch, RootWidget, SizedBox};
 use masonry::{Action, Color, WidgetId};
 use winit::window::Window;
 
@@ -33,7 +33,7 @@ impl AppDriver for Driver {
 pub fn main() {
     let label = Label::new("Hello").with_text_size(32.0).set_token(Some(xilem_colors::tokens::TokenColor::Custom(Color::BLUE_VIOLET)));
     let button = Button::new("Say hello");
-    let switch = LightDarkSwitch::new();
+    let switch = DarkLightSwitch::new();
 
     // Arrange the two widgets vertically, with some padding
     let main_widget = Flex::column()

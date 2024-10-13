@@ -32,7 +32,7 @@ pub struct Button {
     label: WidgetPod<Label>,
     has_color_on_select: bool,
     pub selected: bool,
-    style: ColorStyle,
+    pub style: ColorStyle,
 }
 
 // --- MARK: BUILDERS ---
@@ -97,8 +97,9 @@ impl WidgetMut<'_, Button> {
     pub fn unselected(&mut self) {
         self.widget.selected = false
     }
-    pub fn set_style(&mut self, new_style: ColorStyle) {
-        self.widget.style = new_style
+    pub fn mutate_style(&mut self, new_style: ColorStyle) {
+        self.widget.style = new_style;
+        self.ctx.request_paint();
     }
 }
 
@@ -201,7 +202,6 @@ impl Widget for Button {
             .to_rect()
             .inset(-stroke_width / 2.0)
             .to_rounded_rect(theme::BUTTON_BORDER_RADIUS);
-
         let bg_gradient = if self.selected && self.has_color_on_select && hovered {
             [tokens.hovered_solid_backgrounds, tokens.hovered_solid_backgrounds]
         }
@@ -209,13 +209,17 @@ impl Widget for Button {
             [tokens.solid_backgrounds, tokens.solid_backgrounds]
         }
         else if is_active {
-            [tokens.app_background, tokens.solid_backgrounds]
+            let grad = self.style.active_bg_grad;
+            //[tokens.app_background, tokens.solid_backgrounds]
+            [tokens.set_color(grad[0]), tokens.set_color(grad[1])]
         } else if hovered {
                 let grad = self.style.hov_bg_grad;
                 [tokens.set_color(grad[0]), tokens.set_color(grad[1])]
                 //[tokens.subtle_background, tokens.ui_element_background]
         } else {
-            [tokens.app_background, tokens.subtle_background]
+            let grad = self.style.hov_bg_grad;
+            [tokens.set_color(grad[0]), tokens.set_color(grad[1])]
+            //[tokens.app_background, tokens.subtle_background]
         };
 
         stroke(scene, &rounded_rect, border_color, stroke_width);

@@ -9,7 +9,7 @@
 use masonry::app_driver::{AppDriver, DriverCtx};
 use masonry::dpi::LogicalSize;
 use masonry::widget::{Button, Grid, GridParams, Prose, RootWidget, SizedBox};
-use masonry::{Action, Color, PointerButton, WidgetId};
+use masonry::{Action, PointerButton, WidgetId};
 use parley::layout::Alignment;
 use winit::window::Window;
 use xilem_colors::tokens::TokenColor;
@@ -51,7 +51,7 @@ pub fn main() {
             .with_text_size(14.0)
             .with_text_alignment(Alignment::Middle),
     )
-    .border(Some(TokenColor::Transparent), 0.0);
+    .border(TokenColor::UiElementBorderAndFocusRings, 0.0);
     let button_inputs = vec![
         GridParams {
             x: 0,

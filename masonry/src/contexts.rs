@@ -92,6 +92,7 @@ pub struct RegisterCtx<'a> {
     pub(crate) registered_ids: Vec<WidgetId>,
 }
 
+
 /// A context provided to the [`lifecycle`] method on widgets.
 ///
 /// [`lifecycle`]: Widget::lifecycle

@@ -233,7 +233,7 @@ impl Widget for CalcButton {
         };
         ctx.mutate(&mut self.inner, move |mut inner| {
             inner.set_background(bg);
-            inner.set_border(Some(border_color), stroke);
+            inner.set_border(border_color, stroke);
         });
     }
 

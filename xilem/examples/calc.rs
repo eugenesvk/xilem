@@ -5,8 +5,8 @@ use masonry::widget::{CrossAxisAlignment, GridParams, MainAxisAlignment};
 use winit::dpi::LogicalSize;
 use winit::error::EventLoopError;
 use winit::window::Window;
-use xilem::view::{grid, light_dark_switch, Flex, FlexSequence, FlexSpacer, GridExt, GridSequence};
-use xilem::EventLoopBuilder;
+use xilem::view::{grid, dark_light_switch, Flex, FlexSequence, FlexSpacer, GridExt, GridSequence};
+use xilem::{Color, EventLoopBuilder};
 use xilem::{
     view::{button, flex, label, sized_box, Axis},
     EventLoop, WidgetView, Xilem,
@@ -259,7 +259,7 @@ fn expanded_button(
     text: &str,
     callback: impl Fn(&mut Calculator) + Send + Sync + 'static,
 ) -> impl WidgetView<Calculator> + '_ {
-    sized_box(button(text, callback)).expand().border(Some(TokenColor::Transparent), 1.)
+    sized_box(button(text, callback)).expand().border(TokenColor::Transparent, 1.)
 }
 
 /// Returns an expanded button that triggers the calculator's operator handler,
@@ -278,10 +278,11 @@ fn digit_button(digit: &'static str) -> impl WidgetView<Calculator> {
 }
 
 fn light_dark(mode: bool) -> impl WidgetView<Calculator> {
-    let style = ColorStyle::default();
-    light_dark_switch(mode, style, |data: &mut Calculator, new_state| {
+    //let mut new_style = ColorStyle::default();
+    //new_style.bg_grad = [TokenColor::Custom(Color::RED); 2];
+    dark_light_switch(mode, |data: &mut Calculator, new_state| {
         data.dark_mode = new_state;
-    })
+    })//.set_style(new_style)
 }
 
 fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {

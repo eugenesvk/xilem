@@ -10,6 +10,7 @@ use vello::kurbo::{Affine, RoundedRectRadii};
 use vello::peniko::{Brush, Color, Fill};
 use vello::Scene;
 use xilem_colors::tokens::TokenColor;
+use xilem_colors::ColorStyle;
 
 use crate::paint_scene_helpers::stroke;
 use crate::widget::{WidgetMut, WidgetPod};
@@ -43,10 +44,11 @@ pub struct SizedBox {
     width: Option<f64>,
     height: Option<f64>,
     background: Option<Brush>,
-    border_color: Option<TokenColor>,
+    border_color: TokenColor,
     border_width: f64,
     //border: Option<BorderStyle>,
     corner_radius: RoundedRectRadii,
+    style: ColorStyle,
 }
 
 // --- MARK: BUILDERS ---
@@ -58,10 +60,11 @@ impl SizedBox {
             width: None,
             height: None,
             background: None,
-            border_color: None,
-            border_width: 0.,
+            border_color: TokenColor::Transparent,
+            border_width: 5.,
             //border: None,
             corner_radius: RoundedRectRadii::from_single_radius(2.),
+            style: ColorStyle::default(),
         }
     }
 
@@ -72,10 +75,11 @@ impl SizedBox {
             width: None,
             height: None,
             background: None,
-            border_color: None,
+            border_color: TokenColor::Transparent,
             border_width: 0.,
             //border: None,
             corner_radius: RoundedRectRadii::from_single_radius(2.),
+            style: ColorStyle::default(),
         }
     }
 
@@ -86,10 +90,11 @@ impl SizedBox {
             width: None,
             height: None,
             background: None,
-            border_color: None,
+            border_color: TokenColor::Transparent,
             border_width: 0.,
             //border: None,
             corner_radius: RoundedRectRadii::from_single_radius(2.),
+            style: ColorStyle::default(),
         }
     }
 
@@ -104,16 +109,22 @@ impl SizedBox {
             width: None,
             height: None,
             background: None,
-            border_color: None,
+            border_color: TokenColor::Transparent,
             border_width: 0.,
             //border: None,
             corner_radius: RoundedRectRadii::from_single_radius(2.),
+            style: ColorStyle::default(),
         }
     }
 
     /// Set container's width.
     pub fn width(mut self, width: f64) -> Self {
         self.width = Some(width);
+        self
+    }
+
+    pub fn style(mut self, style: ColorStyle) -> Self {
+        self.style = style;
         self
     }
 
@@ -165,7 +176,7 @@ impl SizedBox {
     }
 
     /// Builder-style method for painting a border around the widget with a color and width.
-    pub fn border(mut self, token: Option<TokenColor>, width: impl Into<f64>) -> Self {
+    pub fn border(mut self, token: TokenColor, width: impl Into<f64>) -> Self {
         self.border_color = token;
         self.border_width = width.into();
         self
@@ -244,6 +255,12 @@ impl WidgetMut<'_, SizedBox> {
         self.ctx.request_paint();
     }
 
+    pub fn set_style(&mut self, new_style: ColorStyle) {
+        self.widget.style = new_style;
+        dbg!(&self.widget.style);
+        self.ctx.request_paint();
+    }
+
     /// Clears background.
     pub fn clear_background(&mut self) {
         self.widget.background = None;
@@ -251,7 +268,7 @@ impl WidgetMut<'_, SizedBox> {
     }
 
     /// Paint a border around the widget with a color and width.
-    pub fn set_border(&mut self, token: Option<TokenColor>, width: impl Into<f64>) {
+    pub fn set_border(&mut self, token: TokenColor, width: impl Into<f64>) {
         self.widget.border_color = token;
         self.widget.border_width = width.into();
         self.ctx.request_layout();
@@ -259,7 +276,7 @@ impl WidgetMut<'_, SizedBox> {
 
     /// Clears border.
     pub fn clear_border(&mut self) {
-        self.widget.border_color = None;
+        self.widget.border_color = TokenColor::Transparent;
         self.widget.border_width = 0.;
         self.ctx.request_layout();
     }
@@ -379,10 +396,12 @@ impl Widget for SizedBox {
                 &panel,
             );
         });
-        let border_color = match self.border_color {
-            Some(token) => colors.set_color(token),
-            None => Color::TRANSPARENT
-        };
+        // let border_color = match self.border_color {
+        //     Some(token) => colors.set_color(token),
+        //     None => Color::TRANSPARENT
+        // };
+        let border_color = colors.set_color(self.style.border);
+        //let border_color = colors.set_color(self.border_color);
         let border_width = self.border_width;
         let border_rect = ctx
             .size()
