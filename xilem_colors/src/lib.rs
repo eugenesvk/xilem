@@ -4,7 +4,7 @@ pub mod tokens;
 pub mod utils;
 
 use scales::Scales;
-use tokens::{ColorPreset, ColorTokens, TokenColor};
+use tokens::{ThemeColor, ColorTokens, TokenColor};
 use utils::THEMES;
 //use xilem_core::{View, ViewMarker};
 //use interpoli::
@@ -36,7 +36,7 @@ impl std::default::Default for ColorStyle {
 #[derive(Debug, Default, Clone)]
 pub struct Colorix {
     pub tokens: ColorTokens,
-    pub(crate) theme: [ColorPreset; 12],
+    pub(crate) theme: [ThemeColor; 12],
     theme_index: usize,
     pub(crate) scales: Scales,
     pub dark_mode: bool,

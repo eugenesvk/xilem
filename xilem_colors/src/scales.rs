@@ -1,4 +1,4 @@
-use crate::{apca::estimate_lc, tokens::ColorPreset};
+use crate::{apca::estimate_lc, tokens::ThemeColor};
 use peniko::Color;
 use palette::{num::MulAdd, Darken, FromColor, IntoColor, Lighten, LinSrgb, Okhsl, OklabHue, Srgb};
 
@@ -19,7 +19,7 @@ impl Scales {
     //     [self.custom.r, self.custom.g, self.custom.b]
     // }
 
-    pub(crate) fn process_color(&mut self, v: ColorPreset) {
+    pub(crate) fn process_color(&mut self, v: ThemeColor) {
         self.srgb = v.get_srgb();
         self.draw_scale();
     }
