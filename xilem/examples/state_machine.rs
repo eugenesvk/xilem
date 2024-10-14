@@ -3,12 +3,12 @@
 
 //! A state machine to detect whether the button was pressed an even or an odd number of times.
 
+use vello::peniko::Brush;
 use winit::error::EventLoopError;
 use xilem::{
-    core::one_of::{OneOf, OneOf3},
-    view::{button, flex, label, prose, sized_box, spinner},
-    EventLoop, WidgetView, Xilem,
+    core::one_of::{OneOf, OneOf3}, view::{button, flex, label, prose, sized_box, spinner}, Color, EventLoop, WidgetView, Xilem
 };
+use xilem_colors::{tokens::TokenColor, ColorStyle};
 
 /// The state of the entire application.
 ///
@@ -60,6 +60,9 @@ fn sequence_button(value: &'static str, target_state: IsEven) -> impl WidgetView
 }
 
 fn app_logic(app_data: &mut StateMachine) -> impl WidgetView<StateMachine> {
+    let mut new_style = ColorStyle::default();
+    new_style.bg = TokenColor::Transparent;
+    new_style.border = TokenColor::Transparent;
     flex((
         button("Reset", |app_data: &mut StateMachine| {
             app_data.history.clear();
@@ -68,7 +71,7 @@ fn app_logic(app_data: &mut StateMachine) -> impl WidgetView<StateMachine> {
         prose(&*app_data.history),
         label(format!("Current state: {:?}", app_data.state)),
         // TODO: Make `spinner` not need a `sized_box` to appear.
-        sized_box(spinner()).height(40.).width(40.),
+        sized_box(spinner()).height(40.).width(40.).style(new_style),
         state_machine(app_data),
         // TODO: When we have a canvas widget, visualise the entire state machine here.
     ))
