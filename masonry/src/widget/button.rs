@@ -6,7 +6,6 @@
 use accesskit::{DefaultActionVerb, NodeBuilder, Role};
 use smallvec::{smallvec, SmallVec};
 use tracing::{trace, trace_span, Span};
-use vello::peniko::Color;
 use vello::Scene;
 use xilem_colors::tokens::TokenColor;
 use xilem_colors::ColorStyle;
@@ -202,31 +201,26 @@ impl Widget for Button {
             .to_rect()
             .inset(-stroke_width / 2.0)
             .to_rounded_rect(theme::BUTTON_BORDER_RADIUS);
-        let bg_gradient = if self.selected && self.has_color_on_select && hovered {
-            [tokens.hovered_solid_backgrounds, tokens.hovered_solid_backgrounds]
+
+        let grad = if self.selected && self.has_color_on_select && hovered {
+            [TokenColor::HoveredSolidBackgrounds; 2]
         }
         else if self.selected && self. has_color_on_select {
-            [tokens.solid_backgrounds, tokens.solid_backgrounds]
+            [TokenColor::SolidBackgrounds; 2]
         }
         else if is_active {
-            let grad = self.style.active_bg_grad;
-            //[tokens.app_background, tokens.solid_backgrounds]
-            [tokens.set_color(grad[0]), tokens.set_color(grad[1])]
+            self.style.active_bg_grad
         } else if hovered {
-                let grad = self.style.hov_bg_grad;
-                [tokens.set_color(grad[0]), tokens.set_color(grad[1])]
-                //[tokens.subtle_background, tokens.ui_element_background]
+                self.style.hov_bg_grad
         } else {
-            let grad = self.style.hov_bg_grad;
-            [tokens.set_color(grad[0]), tokens.set_color(grad[1])]
-            //[tokens.app_background, tokens.subtle_background]
+            self.style.bg_grad
         };
 
         stroke(scene, &rounded_rect, border_color, stroke_width);
         fill_lin_gradient(
             scene,
             &rounded_rect,
-            bg_gradient,
+            [tokens.set_color(grad[0]), tokens.set_color(grad[1])],
             UnitPoint::TOP,
             UnitPoint::BOTTOM,
         );
