@@ -4,32 +4,37 @@ pub mod tokens;
 pub mod utils;
 
 use scales::Scales;
-use tokens::{ThemeColor, ColorTokens, TokenColor};
+use tokens::{ThemeColor, ColorTokens, Token};
 use utils::THEMES;
-//use xilem_core::{View, ViewMarker};
 //use interpoli::
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct ColorStyle {
-    pub bg: TokenColor,
-    pub hov_bg: TokenColor,
-    pub border: TokenColor,
-    pub hov_border: TokenColor,
-    pub bg_grad: [TokenColor; 2],
-    pub hov_bg_grad: [TokenColor; 2],
-    pub active_bg_grad: [TokenColor; 2],
+#[derive(Debug, Clone, PartialEq)]
+pub struct Style {
+    // pub bg: TokenColor,
+    // pub hov_bg: TokenColor,
+    pub border_width: f64,
+    pub gradient: bool,
+    pub color_on_select: bool,
+    pub border: Token,
+    pub hov_border: Token,
+    pub bg_grad: [Token; 2],
+    pub hov_bg_grad: [Token; 2],
+    pub active_bg_grad: [Token; 2],
 }
 
-impl std::default::Default for ColorStyle {
+impl std::default::Default for Style {
     fn default() -> Self {
         Self { 
-            bg: TokenColor::AppBackground, 
-            hov_bg: TokenColor::SubtleBackground, 
-            border: TokenColor::SubtleBordersAndSeparators, 
-            hov_border: TokenColor::HoveredUiElementBorder, 
-            bg_grad: [TokenColor::AppBackground, TokenColor::SubtleBackground], 
-            hov_bg_grad: [TokenColor::SubtleBackground, TokenColor::UiElementBackground],
-            active_bg_grad: [TokenColor::AppBackground, TokenColor::SolidBackgrounds],}
+            // bg: TokenColor::AppBackground, 
+            // hov_bg: TokenColor::SubtleBackground,
+            border_width: 1.,
+            gradient: true, 
+            color_on_select: false,
+            border: Token::SubtleBordersAndSeparators, 
+            hov_border: Token::HoveredUiElementBorder, 
+            bg_grad: [Token::AppBackground, Token::SubtleBackground], 
+            hov_bg_grad: [Token::SubtleBackground, Token::UiElementBackground],
+            active_bg_grad: [Token::AppBackground, Token::SolidBackgrounds],}
     }
 }
 
@@ -106,62 +111,4 @@ impl Colorix {
         self.process_theme();
         //self.tokens.color_on_accent();
     }
-
-    fn _message(&mut self, m: ColorixMessage) {
-        match m {
-            ColorixMessage::SwitchTheme(i) => match i {
-                0..7 => self.pick_theme(i),
-                _ => ()
-            }
-            ColorixMessage::DarkMode => self.dark_mode = true,
-            ColorixMessage::LightMode => self.dark_mode = false,
-            
-        }
-    }
 }
-
-pub enum ColorixMessage {
-    SwitchTheme(usize),
-    DarkMode,
-    LightMode,
-}
-
-// impl ViewMarker for Colorix {}
-// impl View for Colorix {
-//     type Element;
-
-//     type ViewState;
-
-//     fn build(&self, ctx: &mut Context) -> (Self::Element, Self::ViewState) {
-//         todo!()
-//     }
-
-//     fn rebuild<'el>(
-//         &self,
-//         prev: &Self,
-//         view_state: &mut Self::ViewState,
-//         ctx: &mut Context,
-//         element: xilem_core::Mut<'el, Self::Element>,
-//     ) -> xilem_core::Mut<'el, Self::Element> {
-//         todo!()
-//     }
-
-//     fn teardown(
-//         &self,
-//         view_state: &mut Self::ViewState,
-//         ctx: &mut Context,
-//         element: xilem_core::Mut<'_, Self::Element>,
-//     ) {
-//         todo!()
-//     }
-
-//     fn message(
-//         &self,
-//         view_state: &mut Self::ViewState,
-//         id_path: &[xilem_core::ViewId],
-//         message: Box<dyn Box<dyn Message>>,
-//         app_state: &mut State,
-//     ) -> xilem_core::MessageResult<Action, Box<dyn Box<dyn Message>>> {
-//         todo!()
-//     }
-// }
