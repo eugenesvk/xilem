@@ -10,8 +10,8 @@ use winit::window::Window;
 use xilem::core::adapt;
 use xilem::view::{button, checkbox, flex, flex_item, dark_light_switch, progress_bar, sized_box, Axis, FlexSpacer};
 use xilem::{Color, WidgetView, Xilem};
-use xilem_colors::tokens::TokenColor;
-use xilem_colors::ColorStyle;
+use xilem_colors::tokens::Token;
+use xilem_colors::Style;
 
 const SPACER_WIDTH: f64 = 10.;
 
@@ -70,10 +70,10 @@ fn border_box<State: 'static, Action: 'static>(
         ))
         .direction(Axis::Horizontal),
     )
-   // .border(Color::WHITE, 2.)
     .width(450.)
     .height(200.)
     .rounded(15.)
+    //.border(TokenColor::SolidBackgrounds, 0.)
 }
 
 /// Top-level view
@@ -96,7 +96,6 @@ fn app_logic(data: &mut WidgetGallery) -> impl WidgetView<WidgetGallery> {
         .gap(SPACER_WIDTH)
         .direction(Axis::Horizontal),
     )
-    //.border(Color::TRANSPARENT, SPACER_WIDTH)
 }
 
 fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
