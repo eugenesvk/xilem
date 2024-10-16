@@ -121,6 +121,12 @@ pub struct LayoutCtx<'a> {
     pub(crate) widget_children: ArenaMutChildren<'a, Box<dyn Widget>>,
 }
 
+impl<'a> LayoutCtx<'a> {
+    pub fn get_colortokens(&self) -> ColorTokens {
+        self.global_state.colors.tokens
+    }
+}
+
 pub struct ComposeCtx<'a> {
     pub(crate) global_state: &'a mut RenderRootState,
     pub(crate) widget_state: &'a mut WidgetState,
