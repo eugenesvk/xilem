@@ -3,14 +3,16 @@
 
 //! A widget with predefined size.
 
+use std::sync::Arc;
+
 use accesskit::{NodeBuilder, Role};
 use smallvec::{smallvec, SmallVec};
 use tracing::{trace_span, warn, Span};
 use vello::kurbo::{Affine, RoundedRectRadii};
 use vello::peniko::{Brush, Color, Fill};
 use vello::Scene;
-use xilem_colors::tokens::TokenColor;
-use xilem_colors::ColorStyle;
+use xilem_colors::tokens::Token;
+use xilem_colors::Style;
 
 use crate::paint_scene_helpers::stroke;
 use crate::widget::{WidgetMut, WidgetPod};
@@ -43,12 +45,9 @@ pub struct SizedBox {
     child: Option<WidgetPod<Box<dyn Widget>>>,
     width: Option<f64>,
     height: Option<f64>,
-    background: Option<Brush>,
-    border_color: TokenColor,
-    border_width: f64,
-    //border: Option<BorderStyle>,
+    //border_width: f64,
     corner_radius: RoundedRectRadii,
-    style: ColorStyle,
+    style: Arc<Style>,
 }
 
 // --- MARK: BUILDERS ---
@@ -59,12 +58,9 @@ impl SizedBox {
             child: Some(WidgetPod::new(child).boxed()),
             width: None,
             height: None,
-            background: None,
-            border_color: TokenColor::Transparent,
-            border_width: 5.,
-            //border: None,
+            //border_width: 0.,
             corner_radius: RoundedRectRadii::from_single_radius(2.),
-            style: ColorStyle::default(),
+            style: Arc::new(Style::default()),
         }
     }
 
@@ -74,12 +70,9 @@ impl SizedBox {
             child: Some(WidgetPod::new_with_id(child, id).boxed()),
             width: None,
             height: None,
-            background: None,
-            border_color: TokenColor::Transparent,
-            border_width: 0.,
-            //border: None,
+            //border_width: 1.,
             corner_radius: RoundedRectRadii::from_single_radius(2.),
-            style: ColorStyle::default(),
+            style: Arc::new(Style::default()),
         }
     }
 
@@ -89,12 +82,9 @@ impl SizedBox {
             child: Some(child),
             width: None,
             height: None,
-            background: None,
-            border_color: TokenColor::Transparent,
-            border_width: 0.,
-            //border: None,
+            //border_width: 1.,
             corner_radius: RoundedRectRadii::from_single_radius(2.),
-            style: ColorStyle::default(),
+            style: Arc::new(Style::default()),
         }
     }
 
@@ -108,12 +98,9 @@ impl SizedBox {
             child: None,
             width: None,
             height: None,
-            background: None,
-            border_color: TokenColor::Transparent,
-            border_width: 0.,
-            //border: None,
+            //border_width: 1.,
             corner_radius: RoundedRectRadii::from_single_radius(2.),
-            style: ColorStyle::default(),
+            style: Arc::new(Style::default()),
         }
     }
 
@@ -123,7 +110,7 @@ impl SizedBox {
         self
     }
 
-    pub fn style(mut self, style: ColorStyle) -> Self {
+    pub fn style(mut self, style: Arc<Style>) -> Self {
         self.style = style;
         self
     }
@@ -170,17 +157,21 @@ impl SizedBox {
     /// notably, it can be any [`Color`], any gradient, or an [`Image`].
     ///
     /// [`Image`]: vello::peniko::Image
-    pub fn background(mut self, brush: impl Into<Brush>) -> Self {
-        self.background = Some(brush.into());
-        self
-    }
+    // pub fn background(mut self, brush: impl Into<Brush>) -> Self {
+    //     self.background = Some(brush.into());
+    //     self
+    // }
 
     /// Builder-style method for painting a border around the widget with a color and width.
-    pub fn border(mut self, token: TokenColor, width: impl Into<f64>) -> Self {
-        self.border_color = token;
-        self.border_width = width.into();
-        self
-    }
+    // pub fn border(mut self, _token: TokenColor, width: impl Into<f64>) -> Self {
+    //     //self.border_color = token;
+    //     self.border_width = width.into();
+    //     self
+    // }
+    // pub fn border_width(mut self, width: impl Into<f64>) -> Self {
+    //     self.border_width = width.into();
+    //     self
+    // }
 
     /// Builder style method for rounding off corners of this container by setting a corner radius
     pub fn rounded(mut self, radius: impl Into<RoundedRectRadii>) -> Self {
@@ -250,36 +241,36 @@ impl WidgetMut<'_, SizedBox> {
     /// notably, it can be any [`Color`], any gradient, or an [`Image`].
     ///
     /// [`Image`]: vello::peniko::Image
-    pub fn set_background(&mut self, brush: impl Into<Brush>) {
-        self.widget.background = Some(brush.into());
-        self.ctx.request_paint();
-    }
+    // pub fn set_background(&mut self, brush: impl Into<Brush>) {
+    //     self.widget.background = Some(brush.into());
+    //     self.ctx.request_paint();
+    // }
 
-    pub fn set_style(&mut self, new_style: ColorStyle) {
+    pub fn set_style(&mut self, new_style: Arc<Style>) {
         self.widget.style = new_style;
         dbg!(&self.widget.style);
         self.ctx.request_paint();
     }
 
     /// Clears background.
-    pub fn clear_background(&mut self) {
-        self.widget.background = None;
-        self.ctx.request_paint();
-    }
+    // pub fn clear_background(&mut self) {
+    //     self.widget.background = None;
+    //     self.ctx.request_paint();
+    // }
 
     /// Paint a border around the widget with a color and width.
-    pub fn set_border(&mut self, token: TokenColor, width: impl Into<f64>) {
-        self.widget.border_color = token;
-        self.widget.border_width = width.into();
-        self.ctx.request_layout();
-    }
+    // pub fn set_border(&mut self, _token: TokenColor, width: impl Into<f64>) {
+    //     //self.widget.border_color = token;
+    //     self.widget.border_width = width.into();
+    //     self.ctx.request_layout();
+    // }
 
     /// Clears border.
-    pub fn clear_border(&mut self) {
-        self.widget.border_color = TokenColor::Transparent;
-        self.widget.border_width = 0.;
-        self.ctx.request_layout();
-    }
+    // pub fn clear_border(&mut self) {
+    //     self.widget.border_color = TokenColor::Transparent;
+    //     self.widget.border_width = 0.;
+    //     self.ctx.request_layout();
+    // }
 
     /// Round off corners of this container by setting a corner radius
     pub fn set_rounded(&mut self, radius: impl Into<RoundedRectRadii>) {
@@ -345,7 +336,7 @@ impl Widget for SizedBox {
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
         // Shrink constraints by border offset
-        let border_width = self.border_width;
+        let border_width = self.style.border_width;
 
         let child_bc = self.child_constraints(bc);
         let child_bc = child_bc.shrink((2.0 * border_width, 2.0 * border_width));
@@ -381,11 +372,7 @@ impl Widget for SizedBox {
         let corner_radius = self.corner_radius;
 
         let panel = ctx.size().to_rounded_rect(corner_radius);
-
-        let background = match self.background.as_mut() {
-            Some(brush) => brush,
-            None => &Brush::from(colors.subtle_background),
-        };
+        let background = colors.set_color(self.style.bg_grad[1]);
 
         trace_span!("paint background").in_scope(|| {
             scene.fill(
@@ -396,13 +383,9 @@ impl Widget for SizedBox {
                 &panel,
             );
         });
-        // let border_color = match self.border_color {
-        //     Some(token) => colors.set_color(token),
-        //     None => Color::TRANSPARENT
-        // };
+
         let border_color = colors.set_color(self.style.border);
-        //let border_color = colors.set_color(self.border_color);
-        let border_width = self.border_width;
+        let border_width = self.style.border_width;
         let border_rect = ctx
             .size()
             .to_rect()
@@ -504,8 +487,8 @@ mod tests {
     fn label_box_with_solid_background() {
         let widget = SizedBox::new(Label::new("hello"))
             .width(40.0)
-            .height(40.0)
-            .background(Color::PLUM);
+            .height(40.0);
+            //.background(Color::PLUM);
 
         let mut harness = TestHarness::create(widget);
 
@@ -518,17 +501,17 @@ mod tests {
         let widget = SizedBox::empty()
             .width(40.)
             .height(40.)
-            .rounded(20.)
+            .rounded(20.);
            // .border(Color::LIGHT_SKY_BLUE, 5.)
-            .background(
-                Gradient::new_sweep((30., 30.), 0., std::f32::consts::TAU).with_stops([
-                    (0., Color::WHITE),
-                    (0.25, Color::BLACK),
-                    (0.5, Color::RED),
-                    (0.75, Color::GREEN),
-                    (1., Color::WHITE),
-                ]),
-            );
+            // .background(
+            //     Gradient::new_sweep((30., 30.), 0., std::f32::consts::TAU).with_stops([
+            //         (0., Color::WHITE),
+            //         (0.25, Color::BLACK),
+            //         (0.5, Color::RED),
+            //         (0.75, Color::GREEN),
+            //         (1., Color::WHITE),
+            //     ]),
+            // );
 
         let mut harness = TestHarness::create(widget);
 

@@ -15,13 +15,19 @@ use winit::window::Window;
 
 const VERTICAL_WIDGET_SPACING: f64 = 20.0;
 
-struct Driver;
+struct Driver {
+    dark_mode: bool,
+}
 
 impl AppDriver for Driver {
     fn on_action(&mut self, _ctx: &mut DriverCtx<'_>, _widget_id: WidgetId, action: Action) {
         match action {
             Action::ButtonPressed(_) => {
                 println!("Hello");
+            }
+            Action::ModeSwitched(_button, dark_mode) => {
+                self.dark_mode = !dark_mode;
+                println!("Dark mode is always{}", dark_mode)
             }
             action => {
                 eprintln!("Unexpected action {action:?}");
@@ -31,7 +37,7 @@ impl AppDriver for Driver {
 }
 
 pub fn main() {
-    let label = Label::new("Hello").with_text_size(32.0).set_token(Some(xilem_colors::tokens::TokenColor::Custom(Color::BLUE_VIOLET)));
+    let label = Label::new("Hello").with_text_size(32.0).set_token(xilem_colors::tokens::Token::Custom(Color::BLUE_VIOLET));
     let button = Button::new("Say hello");
     let switch = DarkLightSwitch::new();
 
@@ -51,11 +57,13 @@ pub fn main() {
         .with_resizable(true)
         .with_max_inner_size(window_size);
 
+    let driver = Driver {dark_mode: true};
+
     masonry::event_loop_runner::run(
         masonry::event_loop_runner::EventLoop::with_user_event(),
         window_attributes,
         RootWidget::new(main_main_widget),
-        Driver,
+        driver,
     )
     .unwrap();
 }

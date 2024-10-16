@@ -14,6 +14,7 @@ use tracing::{trace_span, Span};
 use vello::kurbo::{Affine, Point, Size};
 use vello::peniko::BlendMode;
 use vello::Scene;
+use xilem_colors::tokens::Token;
 
 use crate::text::{Hinting, TextBrush, TextLayout};
 use crate::widget::{LineBreaking, WidgetMut};
@@ -139,6 +140,7 @@ pub struct VariableLabel {
     show_disabled: bool,
     brush: TextBrush,
     weight: AnimatedF32,
+    text_color: Token,
 }
 
 // --- MARK: BUILDERS ---
@@ -151,6 +153,7 @@ impl VariableLabel {
             show_disabled: true,
             brush: crate::theme::TEXT_COLOR.into(),
             weight: AnimatedF32::stable(Weight::NORMAL.value()),
+            text_color: Token::SolidBackgrounds,
         }
     }
 
@@ -161,6 +164,11 @@ impl VariableLabel {
     #[doc(alias = "with_text_color")]
     pub fn with_text_brush(mut self, brush: impl Into<TextBrush>) -> Self {
         self.text_layout.set_brush(brush);
+        self
+    }
+
+    pub fn with_text_color(mut self, color: Token) -> Self {
+        self.text_color = color;
         self
     }
 
@@ -341,6 +349,7 @@ impl Widget for VariableLabel {
     }
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
+        let tokens = ctx.get_colortokens();
         // Compute max_advance from box constraints
         let max_advance = if self.line_break_mode != LineBreaking::WordWrap {
             None
@@ -354,7 +363,8 @@ impl Widget for VariableLabel {
         self.text_layout.set_max_advance(max_advance);
         if self.text_layout.needs_rebuild() {
             self.text_layout
-                .set_brush(self.brush(ctx.widget_state.is_disabled));
+                .set_brush(tokens.set_color(self.text_color));
+                //.set_brush(self.brush(ctx.widget_state.is_disabled));
             let (font_ctx, layout_ctx) = ctx.text_contexts();
             self.text_layout
                 .rebuild_with_attributes(font_ctx, layout_ctx, |mut builder| {
@@ -377,6 +387,8 @@ impl Widget for VariableLabel {
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
+        // let tokens = ctx.get_colortokens();
+        // self.text_layout.set_brush(tokens.set_color(self.text_color));
         // let tokens = ctx.get_colortokens();
         // self.brush = tokens.text_color().into();
 

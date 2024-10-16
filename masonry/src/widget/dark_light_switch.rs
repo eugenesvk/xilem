@@ -1,12 +1,14 @@
 
 
+use std::sync::Arc;
+
 use accesskit::{DefaultActionVerb, NodeBuilder, Role, Toggled};
 use smallvec::{smallvec, SmallVec};
 use tracing::{trace, trace_span, Span};
 use vello::kurbo::{Insets, Size};
 use vello::Scene;
-use xilem_colors::tokens::TokenColor;
-use xilem_colors::ColorStyle;
+use xilem_colors::tokens::Token;
+use xilem_colors::Style;
 use crate::action::Action;
 use crate::widget::WidgetMut;
 use rand::{thread_rng, Rng};
@@ -24,9 +26,7 @@ const LABEL_INSETS: Insets = Insets::uniform_xy(8., 2.);
 pub struct DarkLightSwitch {
     label: WidgetPod<Label>,
     dark_mode: bool,
-    style: ColorStyle,
-    selected: bool,
-    has_color_on_select: bool,
+    style: Arc<Style>,
 }
 
 impl DarkLightSwitch {
@@ -35,15 +35,17 @@ impl DarkLightSwitch {
         DarkLightSwitch {
             label: WidgetPod::new(Label::new("Switch to LIGHT mode").with_skip_pointer(true)),
             dark_mode: true,
-            style: ColorStyle::default(),
-            selected: false,
-            has_color_on_select: false,
+            style: Arc::new(Style::default()),
         }
     }
-    pub fn set_style(mut self, new_style: ColorStyle) -> DarkLightSwitch{
+    pub fn with_style(mut self, new_style: Arc<Style>) -> DarkLightSwitch{
         self.style = new_style.clone();
         self
     }
+    // pub fn with_gradient(mut self, grad: bool) -> DarkLightSwitch{
+    //     self.has_gradient = grad;
+    //     self
+    // }
 }
 
 // --- MARK: WIDGETMUT ---
@@ -69,7 +71,7 @@ impl WidgetMut<'_, DarkLightSwitch> {
         label.set_text(new_text);
     }
 
-    pub fn mutate_style(&mut self, new_style: ColorStyle) {}
+    //pub fn mutate_style(&mut self, new_style: ColorStyle) {}
 }
 
 // --- MARK: IMPL WIDGET ---
@@ -83,10 +85,9 @@ impl Widget for DarkLightSwitch {
                     trace!("Button {:?} pressed", ctx.widget_id());
                 }
             }
-            PointerEvent::PointerUp(_, _) => {
-                if ctx.hovered() && !ctx.is_disabled() {
-                    //ctx.submit_action(Action::CheckboxChecked(self.dark_mode));
-                    ctx.submit_action(Action::ModeSwitched(PointerButton::None, self.dark_mode));
+            PointerEvent::PointerUp(button, _) => {
+                if ctx.hovered() && !ctx.is_disabled() {                    
+                    ctx.submit_action(Action::ModeSwitched(*button, self.dark_mode));
                     ctx.request_accessibility_update();
                     trace!("light_dark_switch {:?} released", ctx.widget_id());
                 }
@@ -101,7 +102,6 @@ impl Widget for DarkLightSwitch {
         if event.target == ctx.widget_id() {
             match event.action {
                 accesskit::Action::Default => {
-                    //ctx.submit_action(Action::CheckboxChecked(self.dark_mode));
                     ctx.submit_action(Action::ModeSwitched(PointerButton::None, self.dark_mode));
                     ctx.request_paint();
                 }
@@ -156,16 +156,16 @@ impl Widget for DarkLightSwitch {
             (tokens.subtle_borders_and_separators, 1.)
         };
         let token = if is_active {
-            TokenColor::AccentText
+            Token::AccentText
         }
         else if hovered {
-            TokenColor::HighContrastText
+            Token::HighContrastText
         }
         else {
-            TokenColor::LowContrastText
+            Token::LowContrastText
         };
         ctx.mutate(&mut self.label, move |mut label| {
-            label.set_token(Some(token));
+            label.set_token(token);
             label.ctx.request_paint();
         });
 
@@ -174,25 +174,25 @@ impl Widget for DarkLightSwitch {
             .inset(-stroke_width / 2.0)
             .to_rounded_rect(theme::BUTTON_BORDER_RADIUS);
 
-        let grad = if self.selected && self.has_color_on_select && hovered {
-            [TokenColor::HoveredSolidBackgrounds; 2]
-        }
-        else if self.selected && self. has_color_on_select {
-            [TokenColor::SolidBackgrounds; 2]
-        }
-        else if is_active {
+        let grad = if is_active {
             self.style.active_bg_grad
         } else if hovered {
                 self.style.hov_bg_grad
         } else {
             self.style.bg_grad
         };
+        let gradient = if self.style.gradient {
+            [tokens.set_color(grad[0]), tokens.set_color(grad[1])]
+        }
+        else {
+            [tokens.set_color(grad[1]), tokens.set_color(grad[1])]
+        };
 
         stroke(scene, &rounded_rect, border_color, stroke_width);
         fill_lin_gradient(
             scene,
             &rounded_rect,
-            [tokens.set_color(grad[0]), tokens.set_color(grad[1])],
+            gradient,
             UnitPoint::TOP,
             UnitPoint::BOTTOM,
         );

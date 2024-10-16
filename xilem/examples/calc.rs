@@ -1,18 +1,19 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use std::sync::Arc;
+
 use masonry::widget::{CrossAxisAlignment, GridParams, MainAxisAlignment};
 use winit::dpi::LogicalSize;
 use winit::error::EventLoopError;
 use winit::window::Window;
 use xilem::view::{grid, dark_light_switch, Flex, FlexSequence, FlexSpacer, GridExt, GridSequence};
-use xilem::{Color, EventLoopBuilder};
+use xilem::EventLoopBuilder;
 use xilem::{
     view::{button, flex, label, sized_box, Axis},
     EventLoop, WidgetView, Xilem,
 };
-use xilem_colors::tokens::TokenColor;
-use xilem_colors::ColorStyle;
+use xilem_colors::Style;
 
 #[derive(Copy, Clone)]
 enum MathOperator {
@@ -259,7 +260,11 @@ fn expanded_button(
     text: &str,
     callback: impl Fn(&mut Calculator) + Send + Sync + 'static,
 ) -> impl WidgetView<Calculator> + '_ {
-    sized_box(button(text, callback)).expand().border(TokenColor::Transparent, 1.)
+    let mut style = Style::default();
+    style.gradient = false;
+    style.color_on_select = true;
+    let new_style = Arc::new(style);
+    sized_box(button(text, callback).set_style(new_style.clone())).expand().style(new_style)
 }
 
 /// Returns an expanded button that triggers the calculator's operator handler,
@@ -278,11 +283,13 @@ fn digit_button(digit: &'static str) -> impl WidgetView<Calculator> {
 }
 
 fn light_dark(mode: bool) -> impl WidgetView<Calculator> {
-    //let mut new_style = ColorStyle::default();
-    //new_style.bg_grad = [TokenColor::Custom(Color::RED); 2];
+    let mut style = Style::default();
+    //style.bg_grad = [TokenColor::Custom(Color::RED); 2];
+    style.gradient = false;
+    let new_style = Arc::new(style);
     dark_light_switch(mode, |data: &mut Calculator, new_state| {
         data.dark_mode = new_state;
-    })//.set_style(new_style)
+    }).set_style(new_style)
 }
 
 fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
@@ -294,6 +301,7 @@ fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
         operation: None,
         dark_mode: true,
     };
+
 
     let app = Xilem::new(data, app_logic);
     let min_window_size = LogicalSize::new(200., 200.);

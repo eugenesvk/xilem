@@ -3,21 +3,24 @@
 
 //! This example uses variable fonts in a touch sensitive digital clock.
 
-use std::time::Duration;
+use std::{sync::Arc, time::Duration};
 
 use masonry::parley::{
     fontique::Weight,
     style::{FontFamily, FontStack},
 };
 use time::{error::IndeterminateOffset, macros::format_description, OffsetDateTime, UtcOffset};
+// use vello::glyph::skrifa::color::Brush;
 use winit::error::EventLoopError;
 use xilem::{
     view::{
-        button, flex, label, portal, prose, sized_box, task, variable_label, Axis, FlexExt,
+        button, flex, label, portal, prose, sized_box, task, variable_label, dark_light_switch, Axis, FlexExt,
         FlexSpacer,
     },
     Color, EventLoop, EventLoopBuilder, WidgetView, Xilem,
 };
+use xilem_colors::Style;
+// use xilem_colors::ColorStyle;
 use xilem_core::fork;
 
 /// The state of the application, owned by Xilem and updated by the callbacks below.
@@ -28,6 +31,7 @@ struct Clocks {
     local_offset: Result<UtcOffset, IndeterminateOffset>,
     /// The current time.
     now_utc: OffsetDateTime,
+    dark_mode: bool,
 }
 
 /// A possible timezone, with an offset from UTC.
@@ -39,17 +43,17 @@ struct TimeZone {
 }
 
 fn app_logic(data: &mut Clocks) -> impl WidgetView<Clocks> {
-    let view = flex((
+    let view = sized_box(flex((
         // HACK: We add a spacer at the top for Android. See https://github.com/rust-windowing/winit/issues/2308
         FlexSpacer::Fixed(40.),
         local_time(data),
-        controls(),
+        controls(data),
         portal(flex(
             // TODO: When we get responsive layouts, move this into a two-column view on desktop.
             TIMEZONES.iter().map(|it| it.view(data)).collect::<Vec<_>>(),
         ))
         .flex(1.),
-    ));
+    )));
     fork(
         view,
         task(
@@ -92,27 +96,36 @@ fn local_time(data: &mut Clocks) -> impl WidgetView<Clocks> {
 }
 
 /// Controls for the variable font weight.
-fn controls() -> impl WidgetView<Clocks> {
-    flex((
-        button("Increase", |data: &mut Clocks| {
-            data.weight = (data.weight + 100.).clamp(1., 1000.);
-        }),
-        button("Decrease", |data: &mut Clocks| {
-            data.weight = (data.weight - 100.).clamp(1., 1000.);
-        }),
-        button("Minimum", |data: &mut Clocks| {
-            data.weight = 1.;
-        }),
-        button("Maximum", |data: &mut Clocks| {
-            data.weight = 1000.;
-        }),
-    ))
-    .direction(Axis::Horizontal)
+fn controls(data: &mut Clocks) -> impl WidgetView<Clocks> {
+
+        flex((
+            button("Increase", |data: &mut Clocks| {
+                data.weight = (data.weight + 100.).clamp(1., 1000.);
+            }),
+            button("Decrease", |data: &mut Clocks| {
+                data.weight = (data.weight - 100.).clamp(1., 1000.);
+            }),
+            button("Minimum", |data: &mut Clocks| {
+                data.weight = 1.;
+            }),
+            button("Maximum", |data: &mut Clocks| {
+                data.weight = 1000.;
+            }),
+            dark_light_switch(data.dark_mode, |data: &mut Clocks, new_state| {
+                data.dark_mode = new_state;
+            })//.set_style(new_style)
+        ))
+        .direction(Axis::Horizontal)
+    
+
 }
 
 impl TimeZone {
     /// Display this timezone as a row, designed to be shown in a list of time zones.
     fn view(&self, data: &mut Clocks) -> impl WidgetView<Clocks> {
+        // let mut style = WidgetStyle::default();
+        // style.border_width = (data.weight as f64 / 100.).clamp(1., 10.);
+        // let new_style = Arc::new(style);
         let date_time_in_self = data.now_utc.to_offset(self.offset);
         sized_box(flex((
             flex((
@@ -151,9 +164,11 @@ impl TimeZone {
                 }),
             ))
             .direction(Axis::Horizontal),
+            FlexSpacer::Flex(10.)
         )))
         .expand_width()
         .height(72.)
+        //.style(new_style)
     }
 }
 
@@ -178,8 +193,8 @@ const ROBOTO_FLEX: &[u8] = include_bytes!(concat!(
     // The full font file is *not* included in this repository, due to size constraints.
     // If you download the full font, you can use it by moving it into the roboto_flex folder,
     // then swapping which of the following two lines is commented out:
-    // "RobotoFlex-VariableFont_GRAD,XOPQ,XTRA,YOPQ,YTAS,YTDE,YTFI,YTLC,YTUC,opsz,slnt,wdth,wght.ttf",
-    "RobotoFlex-Subset.ttf"
+    "RobotoFlex-VariableFont_GRAD,XOPQ,XTRA,YOPQ,YTAS,YTDE,YTFI,YTLC,YTUC,opsz,slnt,wdth,wght.ttf",
+    //"RobotoFlex-Subset.ttf"
 ));
 
 fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
@@ -188,6 +203,7 @@ fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
         // TODO: We can't get this on Android, because
         local_offset: UtcOffset::current_local_offset(),
         now_utc: OffsetDateTime::now_utc(),
+        dark_mode: true,
     };
 
     // Load Roboto Flex so that it can be used at runtime.

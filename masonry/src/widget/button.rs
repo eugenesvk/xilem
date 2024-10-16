@@ -3,20 +3,21 @@
 
 //! A button widget.
 
+use std::sync::Arc;
+
 use accesskit::{DefaultActionVerb, NodeBuilder, Role};
 use smallvec::{smallvec, SmallVec};
 use tracing::{trace, trace_span, Span};
 use vello::Scene;
-use xilem_colors::tokens::TokenColor;
-use xilem_colors::ColorStyle;
+use xilem_colors::tokens::Token;
+use xilem_colors::Style;
 
 use crate::action::Action;
 use crate::paint_scene_helpers::{fill_lin_gradient, stroke, UnitPoint};
 use crate::widget::{Label, WidgetMut, WidgetPod};
 
 use crate::{
-    theme, AccessCtx, AccessEvent, ArcStr, BoxConstraints, EventCtx, Insets, LayoutCtx,
-    LifeCycleCtx, PaintCtx, PointerEvent, Size, StatusChange, TextEvent, Widget, WidgetId,
+    theme, AccessCtx, AccessEvent, ArcStr, BoxConstraints, EventCtx, Insets, LayoutCtx, LifeCycleCtx, PaintCtx, PointerButton, PointerEvent, Size, StatusChange, TextEvent, Widget, WidgetId
 };
 
 // the minimum padding added to a button.
@@ -29,9 +30,8 @@ const LABEL_INSETS: Insets = Insets::uniform_xy(8., 2.);
 /// Emits [`Action::ButtonPressed`] when pressed.
 pub struct Button {
     label: WidgetPod<Label>,
-    has_color_on_select: bool,
     pub selected: bool,
-    pub style: ColorStyle,
+    pub style: Arc<Style>,
 }
 
 // --- MARK: BUILDERS ---
@@ -63,16 +63,11 @@ impl Button {
     pub fn from_label(label: Label) -> Button {
         Button {
             label: WidgetPod::new(label.with_skip_pointer(true)),
-            has_color_on_select: false,
             selected: false,
-            style: ColorStyle::default(),
+            style: Arc::new(Style::default()),
         }
     }
-    pub fn colored_select(mut self) -> Self {
-        self.has_color_on_select = true;
-        self
-    }
-    pub fn set_style(mut self, new_style: ColorStyle) -> Self {
+    pub fn set_style(mut self, new_style: Arc<Style>) -> Self {
         self.style = new_style;
         self
     }
@@ -86,19 +81,6 @@ impl WidgetMut<'_, Button> {
     }
     pub fn label_mut(&mut self) -> WidgetMut<'_, Label> {
         self.ctx.get_mut(&mut self.widget.label)
-    }
-    pub fn selectable(&mut self) {
-        self.widget.has_color_on_select = true
-    }
-    pub fn selected(&mut self) {
-        self.widget.selected = true
-    }
-    pub fn unselected(&mut self) {
-        self.widget.selected = false
-    }
-    pub fn mutate_style(&mut self, new_style: ColorStyle) {
-        self.widget.style = new_style;
-        self.ctx.request_paint();
     }
 }
 
@@ -116,9 +98,7 @@ impl Widget for Button {
             PointerEvent::PointerUp(button, _) => {
                 if ctx.has_pointer_capture() && ctx.hovered() && !ctx.is_disabled() {
                     ctx.submit_action(Action::ButtonPressed(*button));
-                    if self.has_color_on_select {
-                        self.selected = !self.selected
-                    }
+                    self.selected = !self.selected;
                     trace!("Button {:?} released", ctx.widget_id());
                 }
             }
@@ -132,7 +112,7 @@ impl Widget for Button {
         if event.target == ctx.widget_id() {
             match event.action {
                 accesskit::Action::Default => {
-                    //ctx.submit_action(Action::ButtonPressed(PointerButton::Primary));
+                    ctx.submit_action(Action::ButtonPressed(PointerButton::Primary));
                     ctx.request_paint();
                 }
                 _ => {}
@@ -176,37 +156,36 @@ impl Widget for Button {
         let tokens = ctx.get_colortokens();
         let is_active = ctx.has_pointer_capture();
         let hovered = ctx.hovered();
-        let size = ctx.size();
+
         let (border_color, stroke_width) = if hovered && !ctx.is_disabled() {
-            //(tokens.hovered_ui_element_border, 3.)
-            (tokens.set_color(self.style.hov_border), 3.)
+            (tokens.set_color(self.style.hov_border), self.style.border_width * 2.5)
         } else {
-            (tokens.subtle_borders_and_separators, 1.)
+            (tokens.set_color(self.style.border), 0.)
         };
-        let token = if is_active {
-            TokenColor::AccentText
+        let token = if is_active || self.selected && self.style.color_on_select {
+            Token::AccentText
         }
         else if hovered {
-            TokenColor::HighContrastText
+            Token::HighContrastText
         }
         else {
-            TokenColor::LowContrastText
+            Token::LowContrastText
         };
         ctx.mutate(&mut self.label, move |mut label| {
-            label.set_token(Some(token));
+            label.set_token(token);
             label.ctx.request_paint();
         });
 
-        let rounded_rect = size
+        let rounded_rect = ctx.size()
             .to_rect()
             .inset(-stroke_width / 2.0)
             .to_rounded_rect(theme::BUTTON_BORDER_RADIUS);
 
-        let grad = if self.selected && self.has_color_on_select && hovered {
-            [TokenColor::HoveredSolidBackgrounds; 2]
+        let grad = if self.selected && self.style.color_on_select && hovered {
+            [Token::HoveredSolidBackgrounds; 2]
         }
-        else if self.selected && self. has_color_on_select {
-            [TokenColor::SolidBackgrounds; 2]
+        else if self.selected && self. style.color_on_select {
+            [Token::SolidBackgrounds; 2]
         }
         else if is_active {
             self.style.active_bg_grad
@@ -216,11 +195,18 @@ impl Widget for Button {
             self.style.bg_grad
         };
 
+        let gradient = if self.style.gradient {
+            [tokens.set_color(grad[0]), tokens.set_color(grad[1])]
+        }
+        else {
+            [tokens.set_color(grad[1]), tokens.set_color(grad[1])]
+        };
+
         stroke(scene, &rounded_rect, border_color, stroke_width);
         fill_lin_gradient(
             scene,
             &rounded_rect,
-            [tokens.set_color(grad[0]), tokens.set_color(grad[1])],
+            gradient,
             UnitPoint::TOP,
             UnitPoint::BOTTOM,
         );
@@ -256,6 +242,7 @@ impl Widget for Button {
         Some(self.label.as_ref().text().as_ref().to_string())
     }
 }
+
 
 // --- MARK: TESTS ---
 #[cfg(test)]

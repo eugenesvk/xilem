@@ -13,6 +13,7 @@ use vello::{
     peniko::BlendMode,
     Scene,
 };
+use xilem_colors::tokens::Token;
 
 use crate::widget::{LineBreaking, WidgetMut};
 use crate::{
@@ -34,6 +35,7 @@ pub struct Prose {
     line_break_mode: LineBreaking,
     show_disabled: bool,
     brush: TextBrush,
+    text_color: Token,
 }
 
 // --- MARK: BUILDERS ---
@@ -44,6 +46,7 @@ impl Prose {
             line_break_mode: LineBreaking::WordWrap,
             show_disabled: true,
             brush: crate::theme::TEXT_COLOR.into(),
+            text_color: Token::HighContrastText,
         }
     }
 
@@ -52,10 +55,16 @@ impl Prose {
         self.text_layout.text()
     }
 
-    #[doc(alias = "with_text_color")]
     pub fn with_text_brush(mut self, brush: impl Into<TextBrush>) -> Self {
         self.brush = brush.into();
         self.text_layout.set_brush(self.brush.clone());
+        self
+    }
+
+    pub fn with_text_color(mut self, color: Token) -> Self {
+        // self.brush = brush.into();
+        // self.text_layout.set_brush(self.brush.clone());
+        self.text_color = color;
         self
     }
 
@@ -117,6 +126,15 @@ impl WidgetMut<'_, Prose> {
     pub fn set_text_brush(&mut self, brush: impl Into<TextBrush>) {
         let brush = brush.into();
         self.widget.brush = brush;
+        if !self.ctx.is_disabled() {
+            let brush = self.widget.brush.clone();
+            self.set_text_properties(|layout| layout.set_brush(brush));
+        }
+    }
+
+    pub fn set_text_color(&mut self, color: Token) {
+        let tokens = self.ctx.global_state.colors.tokens;
+        self.widget.brush = TextBrush::from(tokens.set_color(color));
         if !self.ctx.is_disabled() {
             let brush = self.widget.brush.clone();
             self.set_text_properties(|layout| layout.set_brush(brush));
@@ -259,6 +277,11 @@ impl Widget for Prose {
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
+        let tokens = ctx.get_colortokens();
+        self.text_layout.set_brush(tokens.set_color(self.text_color));
+        let (font_ctx, layout_ctx) = ctx.text_contexts();
+        self.text_layout.rebuild(font_ctx, layout_ctx);
+
         if self.text_layout.needs_rebuild() {
             debug_panic!("Called Label paint before layout");
         }

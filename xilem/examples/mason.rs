@@ -177,7 +177,7 @@ fn main() {
 
 #[cfg(target_os = "android")]
 use winit::platform::android::activity::AndroidApp;
-use xilem_colors::ColorStyle;
+use xilem_colors::Style;
 use xilem_core::{fork, run_once};
 
 #[cfg(target_os = "android")]

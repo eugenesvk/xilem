@@ -11,7 +11,7 @@ use tracing::{trace_span, Span};
 use vello::kurbo::{Affine, Point, Size};
 use vello::peniko::BlendMode;
 use vello::Scene;
-use xilem_colors::tokens::TokenColor;
+use xilem_colors::tokens::Token;
 
 use crate::text::{TextBrush, TextLayout};
 use crate::widget::WidgetMut;
@@ -45,7 +45,7 @@ pub struct Label {
     show_disabled: bool,
     brush: TextBrush,
     skip_pointer: bool,
-    token: Option<TokenColor>
+    token: Token,
 }
 
 // --- MARK: BUILDERS ---
@@ -58,7 +58,7 @@ impl Label {
             show_disabled: true,
             brush: crate::theme::TEXT_COLOR.into(),
             skip_pointer: false,
-            token: None,
+            token: Token::LowContrastText
         }
     }
 
@@ -79,7 +79,7 @@ impl Label {
         self
     }
 
-    pub fn set_token(mut self, token: Option<TokenColor>) -> Self {
+    pub fn set_token(mut self, token: Token) -> Self {
         self.token = token;
         self
     }
@@ -128,7 +128,7 @@ impl WidgetMut<'_, Label> {
         ret
     }
 
-    pub fn set_token(&mut self, token: Option<TokenColor>) {
+    pub fn set_token(&mut self, token: Token) {
         self.widget.token = token;
     }
 
@@ -248,13 +248,14 @@ impl Widget for Label {
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
-        let colors = ctx.get_colortokens();
-        if let Some(token) = self.token {
-            self.text_layout.set_brush(colors.set_color(token));
-        }
-        else {
-            self.text_layout.set_brush(colors.low_contrast_text);
-        }
+        let tokens = ctx.get_colortokens();
+        // if let Some(token) = self.token {
+        //     self.text_layout.set_brush(colors.set_color(token));
+        // }
+        // else {
+        //     self.text_layout.set_brush(colors.low_contrast_text);
+        // }
+        self.text_layout.set_brush(tokens.set_color(self.token));
         let (font_ctx, layout_ctx) = ctx.text_contexts();
         self.text_layout.rebuild(font_ctx, layout_ctx);
 

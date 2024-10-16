@@ -6,13 +6,16 @@
 // On Windows platform, don't show a console when opening the app.
 #![windows_subsystem = "windows"]
 
+use std::sync::Arc;
+
 use masonry::app_driver::{AppDriver, DriverCtx};
 use masonry::dpi::LogicalSize;
 use masonry::widget::{Button, Grid, GridParams, Prose, RootWidget, SizedBox};
-use masonry::{Action, PointerButton, WidgetId};
+use masonry::{Action, Color, PointerButton, WidgetId};
 use parley::layout::Alignment;
 use winit::window::Window;
-use xilem_colors::tokens::TokenColor;
+use xilem_colors::tokens::Token;
+use xilem_colors::Style;
 
 struct Driver {
     grid_spacing: f64,
@@ -46,12 +49,16 @@ fn grid_button(params: GridParams) -> Button {
 }
 
 pub fn main() {
+    let mut style = Style::default();
+    style.bg_grad = [Token::Custom(Color::RED); 2];
+    style.border_width = 5.;
+    let style = Arc::new(style);
     let label = SizedBox::new(
         Prose::new("Change spacing by right and left clicking on the buttons")
             .with_text_size(14.0)
             .with_text_alignment(Alignment::Middle),
     )
-    .border(TokenColor::UiElementBorderAndFocusRings, 0.0);
+    .style(style);
     let button_inputs = vec![
         GridParams {
             x: 0,

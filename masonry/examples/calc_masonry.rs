@@ -7,6 +7,8 @@
 #![windows_subsystem = "windows"]
 #![allow(variant_size_differences, clippy::single_match)]
 
+use std::sync::Arc;
+
 use accesskit::{DefaultActionVerb, NodeBuilder, Role};
 use masonry::app_driver::{AppDriver, DriverCtx};
 use masonry::dpi::LogicalSize;
@@ -20,7 +22,8 @@ use smallvec::{smallvec, SmallVec};
 use tracing::{trace, trace_span, Span};
 use vello::Scene;
 use winit::window::Window;
-use xilem_colors::tokens::TokenColor;
+use xilem_colors::tokens::Token;
+use xilem_colors::Style;
 
 #[derive(Clone)]
 struct CalcState {
@@ -203,37 +206,29 @@ impl Widget for CalcButton {
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, _scene: &mut Scene) {
-        let colors = ctx.get_colortokens();
 
         let bg = if self.is_digit {
             if ctx.hovered() {
-                colors.hovered_solid_backgrounds
-                //Token::HoveredSolidBackgrounds
+                Token::HoveredSolidBackgrounds
             }
             else {
-                colors.solid_backgrounds
-                //Token::SolidBackgrounds
+                Token::SolidBackgrounds
             }
         }
         else {
             if ctx.hovered() {
-                colors.hovered_ui_element_background
-                //Token::HoveredUiElementBackground
+                Token::HoveredUiElementBackground
             }
             else {
-                colors.ui_element_background
-                //Token::UiElementBackground
+                Token::UiElementBackground
             }
         };
-        let (border_color, stroke) = if ctx.hovered() {
-            (TokenColor::HoveredUiElementBackground, 3.)
-        }
-        else {
-            (TokenColor::SubtleBordersAndSeparators, 2.)
-        };
+        let mut style = Style::default();
+        style.hov_bg_grad[1] = bg;
+        style.bg_grad[1] = bg;
+        let new_style = Arc::new(style);
         ctx.mutate(&mut self.inner, move |mut inner| {
-            inner.set_background(bg);
-            inner.set_border(border_color, stroke);
+            inner.set_style(new_style);
         });
     }
 
@@ -297,7 +292,7 @@ fn op_button(op: char) -> CalcButton {
 fn digit_button(digit: u8) -> CalcButton {
     CalcButton::new(
         SizedBox::new(Align::centered(
-            Label::new(format!("{digit}")).with_text_size(24.).set_token(Some(TokenColor::AccentText)),
+            Label::new(format!("{digit}")).with_text_size(24.).set_token(Token::AccentText),
         ))
         .expand(),
         CalcAction::Digit(digit),
