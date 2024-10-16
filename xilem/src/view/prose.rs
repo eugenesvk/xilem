@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use masonry::{text::TextBrush, widget, ArcStr};
+use xilem_colors::tokens::Token;
 use xilem_core::{Mut, ViewMarker};
 
 use crate::{Color, MessageResult, Pod, TextAlignment, View, ViewCtx, ViewId};
@@ -10,6 +11,7 @@ pub fn prose(content: impl Into<ArcStr>) -> Prose {
     Prose {
         content: content.into(),
         text_brush: Color::WHITE.into(),
+        text_color: Token::HighContrastText,
         alignment: TextAlignment::default(),
         text_size: masonry::theme::TEXT_SIZE_NORMAL as f32,
     }
@@ -17,8 +19,8 @@ pub fn prose(content: impl Into<ArcStr>) -> Prose {
 
 pub struct Prose {
     content: ArcStr,
-
     text_brush: TextBrush,
+    text_color: Token,
     alignment: TextAlignment,
     text_size: f32,
     // TODO: disabled: bool,
@@ -37,6 +39,11 @@ impl Prose {
         self
     }
 
+    pub fn text_color(mut self, color: Token) -> Self {
+        self.text_color = color;
+        self
+    }
+
     #[doc(alias = "font_size")]
     pub fn text_size(mut self, text_size: f32) -> Self {
         self.text_size = text_size;
@@ -52,7 +59,8 @@ impl<State, Action> View<State, Action, ViewCtx> for Prose {
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         let widget_pod = ctx.new_pod(
             widget::Prose::new(self.content.clone())
-                .with_text_brush(self.text_brush.clone())
+                //.with_text_brush(self.text_brush.clone())
+                .with_text_color(self.text_color)
                 .with_text_alignment(self.alignment)
                 .with_text_size(self.text_size),
         );

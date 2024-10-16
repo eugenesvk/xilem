@@ -1,8 +1,10 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use std::sync::Arc;
+
 use masonry::widget;
-use xilem_colors::ColorStyle;
+use xilem_colors::Style;
 use xilem_core::{Mut, ViewMarker};
 
 use crate::{MessageResult, Pod, View, ViewCtx, ViewId};
@@ -17,7 +19,8 @@ where
     DarkLightSwitch {
         callback,
         dark_mode,
-        style: ColorStyle::default(),
+        style: Arc::new(Style::default()),
+        //has_gradient: true,
     }
 }
 
@@ -25,15 +28,19 @@ where
 pub struct DarkLightSwitch<F> {
     dark_mode: bool,
     callback: F,
-    style: ColorStyle,
+    style: Arc<Style>,
+    //has_gradient: bool,
 }
 
 impl<F> DarkLightSwitch<F> {
-    pub fn set_style(mut self, new_style: ColorStyle) -> DarkLightSwitch<F>{
+    pub fn set_style(mut self, new_style: Arc<Style>) -> DarkLightSwitch<F>{
         self.style = new_style;
-        dbg!(&self.style);
         self
     }
+    // pub fn set_gradient(mut self, grad: bool) -> DarkLightSwitch<F>{
+    //     self.has_gradient = grad;
+    //     self
+    // }
 }
 
 impl<F> ViewMarker for DarkLightSwitch<F> {}
@@ -45,7 +52,9 @@ where
     type ViewState = ();
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
-        ctx.with_leaf_action_widget(|ctx| ctx.new_pod(widget::DarkLightSwitch::new().set_style(self.style.clone())))
+        ctx.with_leaf_action_widget(|ctx| ctx.new_pod(widget::DarkLightSwitch::new().
+            with_style(self.style.clone())))
+            //.with_gradient(self.has_gradient)))
     }
 
     fn rebuild<'el>(
@@ -57,10 +66,6 @@ where
     ) -> Mut<'el, Self::Element> {
         if prev.dark_mode != self.dark_mode {
             element.switch_mode(self.dark_mode);
-            ctx.mark_changed();
-        }
-        if prev.style != self.style {
-            element.mutate_style(self.style.clone());
             ctx.mark_changed();
         }
         element
@@ -88,9 +93,6 @@ where
         );
         match message.downcast::<masonry::Action>() {
             Ok(action) => {
-                // if let masonry::Action::CheckboxChecked(dark_mode) = *action {
-                //     MessageResult::Action((self.callback)(app_state, !dark_mode))
-                // }
                 if let masonry::Action::ModeSwitched(_button, dark_mode) = *action {
                     MessageResult::Action((self.callback)(app_state, !dark_mode))
                 }

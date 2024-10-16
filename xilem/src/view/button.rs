@@ -1,8 +1,11 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use std::sync::Arc;
+
 use crate::{core::View, Pod};
 use masonry::{widget, ArcStr};
+use xilem_colors::Style;
 use xilem_core::{Mut, ViewMarker};
 
 pub use masonry::PointerButton;
@@ -21,6 +24,7 @@ pub fn button<State, Action>(
             PointerButton::Primary => MessageResult::Action(callback(state)),
             _ => MessageResult::Nop,
         },
+        style: Arc::new(Style::default()),
     }
 }
 
@@ -33,12 +37,25 @@ pub fn button_any_pointer<State, Action>(
     Button {
         label: label.into(),
         callback: move |state: &mut State, button| MessageResult::Action(callback(state, button)),
+        style: Arc::new(Style::default()),
     }
 }
 
 pub struct Button<F> {
     label: ArcStr,
     callback: F,
+    style: Arc<Style>,
+}
+
+impl<F> Button<F> {
+    pub fn set_style(mut self, new_style: Arc<Style>) -> Button<F>{
+        self.style = new_style;
+        self
+    }
+    // pub fn border_width(mut self, width: f64) -> Button<F>{
+    //     self.border_width = width;
+    //     self
+    // }
 }
 
 impl<F> ViewMarker for Button<F> {}
@@ -50,7 +67,8 @@ where
     type ViewState = ();
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
-        ctx.with_leaf_action_widget(|ctx| ctx.new_pod(widget::Button::new(self.label.clone())))
+        ctx.with_leaf_action_widget(|ctx| ctx.new_pod(widget::Button::new(self.label.clone())
+            .set_style(self.style.clone())))
     }
 
     fn rebuild<'el>(

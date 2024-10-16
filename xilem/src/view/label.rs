@@ -3,7 +3,7 @@
 
 use masonry::{text::TextBrush, widget, ArcStr};
 use xilem_core::{Mut, ViewMarker};
-use xilem_colors::{tokens::TokenColor, ColorStyle};
+use xilem_colors::tokens::Token;
 
 use crate::{Color, MessageResult, Pod, TextAlignment, View, ViewCtx, ViewId};
 
@@ -13,8 +13,7 @@ pub fn label(label: impl Into<ArcStr>) -> Label {
         text_brush: Color::WHITE.into(),
         alignment: TextAlignment::default(),
         text_size: masonry::theme::TEXT_SIZE_NORMAL as f32,
-        token: None,
-        style: ColorStyle::default(),
+        token: Token::HighContrastText,
     }
 }
 
@@ -24,8 +23,7 @@ pub struct Label {
     text_brush: TextBrush,
     alignment: TextAlignment,
     text_size: f32,
-    token: Option<TokenColor>,
-    style: ColorStyle,
+    token: Token,
     // TODO: add more attributes of `masonry::widget::Label`
 }
 
@@ -36,15 +34,11 @@ impl Label {
         self
     }
 
-    pub fn set_token(mut self, token: Option<TokenColor>) -> Self {
+    pub fn set_token(mut self, token: Token) -> Self {
         self.token = token;
         self
     }
 
-    pub fn set_style(mut self, new_style: ColorStyle) -> Self {
-        self.style = new_style;
-        self
-    }
 
     pub fn alignment(mut self, alignment: TextAlignment) -> Self {
         self.alignment = alignment;

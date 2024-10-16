@@ -2,11 +2,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use std::marker::PhantomData;
+use std::sync::Arc;
 
 use masonry::widget;
 use vello::kurbo::RoundedRectRadii;
 use vello::peniko::{Brush, Color};
-use xilem_colors::ColorStyle;
+use xilem_colors::Style;
 use xilem_core::ViewMarker;
 
 
@@ -14,7 +15,7 @@ use crate::{
     core::{Mut, View, ViewId},
     Pod, ViewCtx, WidgetView,
 };
-use xilem_colors::tokens::TokenColor;
+use xilem_colors::tokens::Token;
 
 /// A widget with predefined size.
 ///
@@ -29,13 +30,13 @@ where
         inner,
         height: None,
         width: None,
-        background: None,
+        //background: None,
         //border: None,
-        border_color: TokenColor::Transparent,
-        border_width: 5.,
+       // border_color: TokenColor::Transparent,
+        border_width: 0.,
         corner_radius: RoundedRectRadii::from_single_radius(0.0),
         phantom: PhantomData,
-        style: ColorStyle::default(),
+        style: Arc::new(Style::default()),
     }
 }
 
@@ -43,12 +44,12 @@ pub struct SizedBox<V, State, Action = ()> {
     inner: V,
     width: Option<f64>,
     height: Option<f64>,
-    background: Option<Brush>,
-    border_color: TokenColor,
+    //background: Option<Brush>,
+    //border_color: TokenColor,
     border_width: f64,
     //border: Option<BorderStyle>,
     corner_radius: RoundedRectRadii,
-    style: ColorStyle,
+    style: Arc<Style>,
     phantom: PhantomData<fn() -> (State, Action)>,
 }
 
@@ -101,22 +102,22 @@ impl<V, State, Action> SizedBox<V, State, Action> {
     /// notably, it can be any [`Color`], any gradient, or an [`Image`].
     ///
     /// [`Image`]: vello::peniko::Image
-    pub fn background(mut self, brush: impl Into<Brush>) -> Self {
-        self.background = Some(brush.into());
-        self
-    }
+    // pub fn background(mut self, brush: impl Into<Brush>) -> Self {
+    //     self.background = Some(brush.into());
+    //     self
+    // }
 
-    pub fn style(mut self, new_style: ColorStyle) -> Self {
+    pub fn style(mut self, new_style: Arc<Style>) -> Self {
         self.style = new_style;
         self
     }
 
     /// Builder-style method for painting a border around the widget with a color and width.
-    pub fn border(mut self, color: TokenColor, width: impl Into<f64>) -> Self {
-        self.border_color = color;
-        self.border_width = width.into();
-        self
-    }
+    // pub fn border(mut self, color: TokenColor, width: impl Into<f64>) -> Self {
+    //     self.border_color = color;
+    //     self.border_width = width.into();
+    //     self
+    // }
 
     /// Builder style method for rounding off corners of this container by setting a corner radius
     pub fn rounded(mut self, radius: impl Into<RoundedRectRadii>) -> Self {
@@ -137,18 +138,18 @@ where
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         let (child, child_state) = self.inner.build(ctx);
-        let mut widget = widget::SizedBox::new_pod(child.inner.boxed())
+        let  widget = widget::SizedBox::new_pod(child.inner.boxed())
             .raw_width(self.width)
             .raw_height(self.height)
             .rounded(self.corner_radius)
             .style(self.style.clone());
-        if let Some(background) = &self.background {
-            widget = widget.background(background.clone());
-        }
+        // if let Some(background) = &self.background {
+        //     widget = widget.background(background.clone());
+        // }
         // if let Some(_) = &self.border_color {
         //     widget = widget.border(self.border_color, self.border_width);
         // }
-        widget = widget.border(self.border_color, self.border_width);
+       // widget = widget.border(self.border_color, self.border_width);
         (ctx.new_pod(widget), child_state)
     }
 
@@ -171,19 +172,19 @@ where
                 None => element.unset_height(),
             }
         }
-        if self.background != prev.background {
-            match &self.background {
-                Some(background) => element.set_background(background.clone()),
-                None => element.clear_background(),
-            }
-        }
+        // if self.background != prev.background {
+        //     match &self.background {
+        //         Some(background) => element.set_background(background.clone()),
+        //         None => element.clear_background(),
+        //     }
+        // }
         if self.style != prev.style {
             dbg!(&self.style);
             element.set_style(self.style.clone())
         }
-        if self.border_color != prev.border_color {
-            element.set_border(self.border_color, self.border_width);
-        }
+        // if self.border_color != prev.border_color {
+        //     element.set_border(self.border_color, self.border_width);
+        // }
         if self.corner_radius != prev.corner_radius {
             element.set_rounded(self.corner_radius);
         }
