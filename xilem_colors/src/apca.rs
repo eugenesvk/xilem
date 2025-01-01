@@ -1,5 +1,4 @@
-use palette::Srgb;
-
+use peniko::Color;
 // originals
 const S_TRC: f32 = 2.4;
 const N_TX: f32 = 0.57;
@@ -49,16 +48,16 @@ fn clamp_contrast(cw: f32) -> f32 {
     }
 }
 
-pub fn estimate_lc(rgb_txt: Srgb<u8>, rgb_bg: Srgb<u8>) -> f32 {
-    let r = (f32::from(rgb_txt.red) / 255.0).powf(S_TRC) * S_RCO;
-    let g = (f32::from(rgb_txt.green) / 255.0).powf(S_TRC) * S_GCO;
-    let b = (f32::from(rgb_txt.blue) / 255.0).powf(S_TRC) * S_BCO;
+pub fn estimate_lc(rgb_txt: Color, rgb_bg: Color) -> f32 {
+    let r = (f32::from(rgb_txt.r) / 255.0).powf(S_TRC) * S_RCO;
+    let g = (f32::from(rgb_txt.g) / 255.0).powf(S_TRC) * S_GCO;
+    let b = (f32::from(rgb_txt.b) / 255.0).powf(S_TRC) * S_BCO;
 
     let y = r + g + b;
 
-    let r2 = (f32::from(rgb_bg.red) / 255.0).powf(S_TRC) * 0.212_672_9;
-    let g2 = (f32::from(rgb_bg.green) / 255.0).powf(S_TRC) * 0.715_152_2;
-    let b2 = (f32::from(rgb_bg.blue) / 255.0).powf(S_TRC) * 0.072_175_0;
+    let r2 = (f32::from(rgb_bg.r) / 255.0).powf(S_TRC) * 0.212_672_9;
+    let g2 = (f32::from(rgb_bg.g) / 255.0).powf(S_TRC) * 0.715_152_2;
+    let b2 = (f32::from(rgb_bg.b) / 255.0).powf(S_TRC) * 0.072_175_0;
 
     let y2 = r2 + g2 + b2;
 

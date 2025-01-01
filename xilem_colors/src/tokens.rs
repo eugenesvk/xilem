@@ -1,5 +1,5 @@
 use crate::apca::estimate_lc;
-use palette::{LinSrgb, Okhsl, Srgb, FromColor, IntoColor};
+use crate::color_space::{LinSrgb, Okhsl};
 use peniko::Color;
 
 #[derive(Default, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -43,23 +43,22 @@ pub struct ColorTokens {
 
 impl ColorTokens {
     pub(crate) fn color_on_accent(&mut self) {
-        let white = Srgb::<u8>::from_components((255, 255, 255));
         let bg = self.solid_backgrounds;
-        let bg_cl = Srgb::<u8>::from_components((bg.r, bg.g, bg.b));
+        let white = Color::WHITE;
   
-        let lc = estimate_lc(white, bg_cl);
+        let lc = estimate_lc(white, bg);
         if lc > -46. {
             self.inverse_color = true;
             let s = self.solid_backgrounds;
-            let inverse = LinSrgb::from_components((s.r, s.g, s.b)).into_format();
+            let inverse = LinSrgb::into_linear([s.r, s.g, s.b]);
             let mut okhsl = Okhsl::from_color(inverse);
 
             okhsl.lightness = 0.01;
             okhsl.saturation = 0.7;
-            let (r, g, b) = Srgb::from_linear(okhsl.into_color()).into();
-            self.color_on_accent = Color::rgb8(r, g, b);
+            let rgb = okhsl.to_u8();
+            self.color_on_accent = Color::rgb8(rgb[0], rgb[1], rgb[2]);
         } else {
-            self.color_on_accent = Color::WHITE;
+            self.color_on_accent = white;
         }
     }
 
@@ -143,9 +142,8 @@ pub enum ThemeColor {
 }
 
 impl ThemeColor {
-    pub(crate) fn get_srgb(self) -> LinSrgb<f32> {
-        let [r, g, b] = self.rgb();
-        Srgb::new(r, g, b).into_linear()
+    pub(crate) fn get_srgb(self) -> LinSrgb {
+        LinSrgb::into_linear(self.rgb())
     }
     /// Returns the rgb values of this preset.
     ///

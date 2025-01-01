@@ -36,10 +36,22 @@ impl LinSrgb {
             gamma_u8_from_linear_f32(self.blue),
         ]
     }
+    pub fn into_linear(rgb: [u8; 3]) -> LinSrgb {
+        let r = linear_f32_from_gamma_u8(rgb[0]);
+        let g = linear_f32_from_gamma_u8(rgb[1]);
+        let b = linear_f32_from_gamma_u8(rgb[2]);
+        LinSrgb::new(r, g, b)
+    }
 }
-pub fn from_linear(rgb: LinSrgb) -> [u8; 3] {
-    rgb.from_linear()
+
+fn linear_f32_from_gamma_u8(s: u8) -> f32 {
+    if s <= 10 {
+        s as f32 / 3294.6
+    } else {
+        ((s as f32 + 14.025) / 269.025).powf(2.4)
+    }
 }
+
 fn gamma_u8_from_linear_f32(l: f32) -> u8 {
     if l <= 0.0 {
         0
@@ -118,6 +130,10 @@ impl Okhsl {
     pub fn to_srgb(self) -> LinSrgb {
         let oklab = self.to_oklab();
         oklab.to_linear_srgb()
+    }
+    pub fn to_u8(self) -> [u8; 3] {
+        let rgb = self.to_srgb();
+        rgb.from_linear()
     }
 }
 

@@ -1,5 +1,6 @@
 pub(crate) mod apca;
 pub(crate) mod scales;
+pub(crate) mod color_space;
 pub mod tokens;
 pub mod utils;
 
