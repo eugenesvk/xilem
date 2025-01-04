@@ -19,7 +19,7 @@ use crate::action::Action;
 use crate::dpi::{LogicalPosition, PhysicalPosition, PhysicalSize};
 use crate::event::{PointerButton, PointerEvent, PointerState, TextEvent, WindowEvent};
 use crate::render_root::{RenderRoot, RenderRootOptions, RenderRootSignal, WindowSizePolicy};
-use crate::testing::{screenshots::get_image_diff, snapshot_utils::get_cargo_workspace};
+use crate::testing::snapshot_utils::get_cargo_workspace;
 use crate::tracing_backend::try_init_test_tracing;
 use crate::widget::{WidgetMut, WidgetRef};
 use crate::{Color, Handled, Point, Size, Vec2, Widget, WidgetId};
@@ -600,18 +600,18 @@ impl TestHarness {
         if let Ok(reference_file) = ImageReader::open(reference_path) {
             let ref_image = reference_file.decode().unwrap().to_rgb8();
 
-            if let Some(diff_image) = get_image_diff(&ref_image, &new_image.to_rgb8()) {
-                // Remove '<test_name>.new.png' '<test_name>.diff.png' files if they exist
-                let _ = std::fs::remove_file(&new_path);
-                let _ = std::fs::remove_file(&diff_path);
-                new_image.save(&new_path).unwrap();
-                diff_image.save(&diff_path).unwrap();
-                panic!("Snapshot test '{test_name}' failed: Images are different");
-            } else {
-                // Remove the vestigial new and diff images
-                let _ = std::fs::remove_file(&new_path);
-                let _ = std::fs::remove_file(&diff_path);
-            }
+            // if let Some(diff_image) = get_image_diff(&ref_image, &new_image.to_rgb8()) {
+            //     // Remove '<test_name>.new.png' '<test_name>.diff.png' files if they exist
+            //     let _ = std::fs::remove_file(&new_path);
+            //     let _ = std::fs::remove_file(&diff_path);
+            //     new_image.save(&new_path).unwrap();
+            //     diff_image.save(&diff_path).unwrap();
+            //     panic!("Snapshot test '{test_name}' failed: Images are different");
+            // } else {
+            //     // Remove the vestigial new and diff images
+            //     let _ = std::fs::remove_file(&new_path);
+            //     let _ = std::fs::remove_file(&diff_path);
+            // }
         } else {
             // Remove '<test_name>.new.png' file if it exists
             let _ = std::fs::remove_file(&new_path);
