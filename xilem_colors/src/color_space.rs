@@ -1,3 +1,5 @@
+// OkHsl color space copyright by Björn Ottosson  https://bottosson.github.io/posts/colorpicker/
+
 use std::f32::consts::PI;
 
 #[derive(Debug, Default, Clone, Copy)]
