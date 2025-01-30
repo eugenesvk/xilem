@@ -107,9 +107,10 @@ tree_arena = { version = "0.1.0", path = "tree_arena" }
 vello = "0.4.0"
 wgpu = "23.0.1"
 kurbo = "0.11.1"
-parley = { git = "https://github.com/linebender/parley", rev = "16b62518d467487ee15cb230fdb28530d89a8cf6", features = [
-    "accesskit",
-] }
+# parley = { git = "https://github.com/linebender/parley", rev = "16b62518d467487ee15cb230fdb28530d89a8cf6", features = [
+#     "accesskit",
+# ] }
+parley = { path = "../parley/parley", features = ["accesskit",] }
 peniko = "0.3.1"
 winit = "0.30.4"
 tracing = { version = "0.1.40", default-features = false }
@@ -119,10 +120,18 @@ dpi = "0.1.1"
 image = { version = "0.25.2", default-features = false }
 web-time = "1.1.0"
 bitflags = "2.6.0"
-accesskit = "0.17.0"
-accesskit_winit = "0.23.0"
+# accesskit = "0.17.1"
+# accesskit_winit = "0.23.1"
+accesskit      	= {path="../accesskit/common"}
+accesskit_winit	= {path="../accesskit/platforms/winit"}
 nv-flip = "0.1.2"
 time = "0.3.36"
+
+[patch.crates-io]
+winit          	= {path="../winit"}
+dpi            	= {path="../winit/dpi"}
+accesskit      	= {path="../accesskit/common"}
+accesskit_winit	= {path="../accesskit/platforms/winit"}
 
 [profile.ci]
 inherits = "dev"
