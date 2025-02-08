@@ -151,11 +151,9 @@ where
         let seq_state = self.sequence.seq_build(ctx, &mut elements);
         for child in elements.into_inner() {
             widget = match child {
-                FlexElement::Child(child, params) => {
-                    widget.with_flex_child_pod(child.erased_widget_pod(), params)
-                }
-                FlexElement::FixedSpacer(size) => widget.with_spacer(size),
-                FlexElement::FlexSpacer(flex) => widget.with_flex_spacer(flex),
+                FlexElement::Child(child, params) => {widget.with_flex_child_pod(child.erased_widget_pod(), params)}
+                FlexElement::FixedSpacer(size)    =>  widget.with_spacer     (size),
+                FlexElement::FlexSpacer (flex)    =>  widget.with_flex_spacer(flex),
             }
         }
         let pod = ctx.new_pod(widget);
