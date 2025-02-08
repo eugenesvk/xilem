@@ -408,9 +408,8 @@ where
         (GridElement::Child(pod.erased(), self.params), state)
     }
 
-    fn rebuild(
-        &self,
-        prev: &Self,
+    fn rebuild(&self,
+        prev      : &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         mut element: Mut<Self::Element>,
@@ -423,10 +422,8 @@ where
                     self.params,
                 );
             }
-            let mut child = widgets::Grid::child_mut(&mut element.parent, element.idx)
-                .expect("GridWrapper always has a widget child");
-            self.view
-                .rebuild(&prev.view, view_state, ctx, child.downcast());
+            let mut child = widgets::Grid::child_mut(&mut element.parent, element.idx).expect("GridWrapper always has a widget child");
+            self.view.rebuild(&prev.view, view_state, ctx, child.downcast());
         }
     }
 

@@ -108,10 +108,9 @@ where
         })
     }
 
-    fn rebuild(
-        &self,
-        prev: &Self,
-        state: &mut Self::ViewState,
+    fn rebuild(&self,
+        prev      : &Self,
+        state     : &mut Self::ViewState,
         ctx: &mut ViewCtx,
         mut element: Mut<Self::Element>,
     ) {

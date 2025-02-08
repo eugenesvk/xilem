@@ -113,6 +113,9 @@ where
 
 impl ViewMarker for Label {}
 impl<State, Action> View<State, Action, ViewCtx> for Label {
+
+
+
     type Element = Pod<widgets::Label>;
     type ViewState = ();
 

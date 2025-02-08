@@ -62,12 +62,9 @@ impl<Seq> ZStack<Seq> {
 impl<Seq> ViewMarker for ZStack<Seq> {}
 impl<State, Action, Seq> View<State, Action, ViewCtx> for ZStack<Seq>
 where
-    State: 'static,
-    Action: 'static,
-    Seq: ZStackSequence<State, Action>,
+    State: 'static, Action: 'static, Seq: ZStackSequence<State, Action>,
 {
     type Element = Pod<widgets::ZStack>;
-
     type ViewState = Seq::SeqState;
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
@@ -81,9 +78,8 @@ where
         (pod, seq_state)
     }
 
-    fn rebuild(
-        &self,
-        prev: &Self,
+    fn rebuild(&self,
+        prev      : &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         mut element: Mut<Self::Element>,
