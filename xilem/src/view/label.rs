@@ -94,6 +94,12 @@ impl Label {
         self.line_break_mode = line_break_mode;
         self
     }
+
+    /// Get whether the text is non-blank
+    pub fn is(&self) -> bool {
+        self.label.len() > 0
+    }
+
 }
 
 impl<T> From<T> for Label
