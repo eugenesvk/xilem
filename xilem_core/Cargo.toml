@@ -29,8 +29,8 @@ kurbo = { optional = true, workspace = true }
 [lints]
 workspace = true
 
-[[example]]
-name = "user_interface"
-# This actually enables scraping for all examples, not just this one.
-# However it is possible to set doc-scrape-examples to false for other specific examples.
-doc-scrape-examples = true
+# [[example]]
+# name = "user_interface"
+# # This actually enables scraping for all examples, not just this one.
+# # However it is possible to set doc-scrape-examples to false for other specific examples.
+# doc-scrape-examples = true
