@@ -19,7 +19,7 @@ use crate::theme;
 use crate::util::{fill_lin_gradient, stroke, UnitPoint};
 use crate::widgets::Label;
 
-/// The minimum padding added to a button. NOTE: these values are chosen to match the existing look of TextBox; these should be reevaluated at some point.
+/// The minimum padding added to a button. NOTE: these values are chosen to match the existing look of `TextBox`; these should be reevaluated at some point.
 pub const PAD_DEF: Insets = Insets::uniform_xy(8., 2.);
 
 /// A button with up to 9 text [`Label`]s (allowing for custom styles) with custom [`Pad9`]ing
@@ -432,7 +432,7 @@ impl Widget for Button9 {
             }
             if i == 4 {
                 // set baseline off the central label only?
-                let baseline = ctx.child_baseline_offset(&lbl9);
+                let baseline = ctx.child_baseline_offset(lbl9);
                 ctx.set_baseline_offset(baseline + pad.y1);
             }
             lsz[i + 1] = lbl_sz; // store size for later button size/offset calculations
