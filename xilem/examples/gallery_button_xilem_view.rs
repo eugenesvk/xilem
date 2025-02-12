@@ -21,9 +21,7 @@ struct AppState {}
 use masonry::core::ArcStr;
 use masonry::peniko::Color;
 use winit::error::EventLoopError;
-use xilem::view::{
-    button9_pad, flex, label, portal, prose, Axis, Prose,
-};
+use xilem::view::{button9_pad, flex, label, portal, prose, Axis, Prose};
 use xilem::{palette::css, EventLoop, FontWeight, TextAlignment, WidgetView, Xilem};
 
 fn title_prose(text: impl Into<ArcStr>) -> Prose {
