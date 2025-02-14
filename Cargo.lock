@@ -21,14 +21,10 @@ checksum = "c71b1793ee61086797f5c80b6efa2b8ffa6d5dd703f118545808a7f2e27f7046"
 [[package]]
 name = "accesskit"
 version = "0.17.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d3d3b8f9bae46a948369bc4a03e815d4ed6d616bd00de4051133a5019dc31c5a"
 
 [[package]]
 name = "accesskit_atspi_common"
 version = "0.10.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7c5dd55e6e94949498698daf4d48fb5659e824d7abec0d394089656ceaf99d4f"
 dependencies = [
  "accesskit",
  "accesskit_consumer",
@@ -41,8 +37,6 @@ dependencies = [
 [[package]]
 name = "accesskit_consumer"
 version = "0.26.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f47983a1084940ba9a39c077a8c63e55c619388be5476ac04c804cfbd1e63459"
 dependencies = [
  "accesskit",
  "hashbrown",
@@ -52,8 +46,6 @@ dependencies = [
 [[package]]
 name = "accesskit_macos"
 version = "0.18.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7329821f3bd1101e03a7d2e03bd339e3ac0dc64c70b4c9f9ae1949e3ba8dece1"
 dependencies = [
  "accesskit",
  "accesskit_consumer",
@@ -66,8 +58,6 @@ dependencies = [
 [[package]]
 name = "accesskit_unix"
 version = "0.13.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fcee751cc20d88678c33edaf9c07e8b693cd02819fe89053776f5313492273f5"
 dependencies = [
  "accesskit",
  "accesskit_atspi_common",
@@ -84,8 +74,6 @@ dependencies = [
 [[package]]
 name = "accesskit_windows"
 version = "0.24.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "24fcd5d23d70670992b823e735e859374d694a3d12bfd8dd32bd3bd8bedb5d81"
 dependencies = [
  "accesskit",
  "accesskit_consumer",
@@ -99,8 +87,6 @@ dependencies = [
 [[package]]
 name = "accesskit_winit"
 version = "0.23.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6a6a48dad5530b6deb9fc7a52cc6c3bf72cdd9eb8157ac9d32d69f2427a5e879"
 dependencies = [
  "accesskit",
  "accesskit_macos",
@@ -681,27 +667,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "console_error_panic_hook"
-version = "0.1.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a06aeb73f470f66dcdbf7223caeebb85984942f22f1adb2a088cf9668146bbbc"
-dependencies = [
- "cfg-if",
- "wasm-bindgen",
-]
-
-[[package]]
-name = "console_log"
-version = "1.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "be8aed40e4edbf4d3b4431ab260b63fdc40f5780a4766824329ea0f1eefe3c0f"
-dependencies = [
- "log",
- "wasm-bindgen",
- "web-sys",
-]
-
-[[package]]
 name = "core-foundation"
 version = "0.9.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -751,26 +716,6 @@ dependencies = [
  "core-graphics",
  "foreign-types",
  "libc",
-]
-
-[[package]]
-name = "counter"
-version = "0.1.0"
-dependencies = [
- "console_error_panic_hook",
- "wasm-bindgen",
- "web-sys",
- "xilem_web",
-]
-
-[[package]]
-name = "counter_custom_element"
-version = "0.1.0"
-dependencies = [
- "console_error_panic_hook",
- "wasm-bindgen",
- "web-sys",
- "xilem_web",
 ]
 
 [[package]]
@@ -876,18 +821,6 @@ checksum = "75b325c5dbd37f80359721ad39aca5a29fb04c89279657cffdda8736d0c0b9d2"
 [[package]]
 name = "dpi"
 version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f25c0e292a7ca6d6498557ff1df68f32c99850012b6ea401cf8daf771f22ff53"
-
-[[package]]
-name = "elm"
-version = "0.0.0"
-dependencies = [
- "console_error_panic_hook",
- "console_log",
- "log",
- "xilem_web",
-]
 
 [[package]]
 name = "encode_unicode"
@@ -984,20 +917,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "fetch"
-version = "0.1.0"
-dependencies = [
- "console_error_panic_hook",
- "console_log",
- "gloo-net",
- "log",
- "serde",
- "wasm-bindgen",
- "web-sys",
- "xilem_web",
-]
-
-[[package]]
 name = "flate2"
 version = "1.0.35"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1056,7 +975,6 @@ dependencies = [
 [[package]]
 name = "fontique"
 version = "0.2.0"
-source = "git+https://github.com/linebender/parley?rev=16b62518d467487ee15cb230fdb28530d89a8cf6#16b62518d467487ee15cb230fdb28530d89a8cf6"
 dependencies = [
  "bytemuck",
  "core-foundation",
@@ -1285,48 +1203,6 @@ dependencies = [
  "khronos_api",
  "log",
  "xml-rs",
-]
-
-[[package]]
-name = "gloo-net"
-version = "0.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c06f627b1a58ca3d42b45d6104bf1e1a03799df472df00988b6ba21accc10580"
-dependencies = [
- "gloo-utils",
- "http",
- "js-sys",
- "serde",
- "serde_json",
- "thiserror 1.0.69",
- "wasm-bindgen",
- "wasm-bindgen-futures",
- "web-sys",
-]
-
-[[package]]
-name = "gloo-timers"
-version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bbb143cf96099802033e0d4f4963b19fd2e0b728bcf076cd9cf7f6634f092994"
-dependencies = [
- "futures-channel",
- "futures-core",
- "js-sys",
- "wasm-bindgen",
-]
-
-[[package]]
-name = "gloo-utils"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0b5555354113b18c547c1d3a98fbf7fb32a9ff4f6fa112ce823a21641a0ba3aa"
-dependencies = [
- "js-sys",
- "serde",
- "serde_json",
- "wasm-bindgen",
- "web-sys",
 ]
 
 [[package]]
@@ -1793,8 +1669,7 @@ checksum = "e2db585e1d738fc771bf08a151420d3ed193d9d895a36df7f6f8a9456b911ddc"
 [[package]]
 name = "kurbo"
 version = "0.11.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "89234b2cc610a7dd927ebde6b41dd1a5d4214cffaef4cf1fb2195d592f92518f"
+source = "git+https://github.com/linebender/kurbo?rev=237b333935973a1df6602fcda46a160cbd6b4589#237b333935973a1df6602fcda46a160cbd6b4589"
 dependencies = [
  "arrayvec",
  "smallvec",
@@ -1937,16 +1812,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8263075bb86c5a1b1427b5ae862e8889656f126e9f77c484496e8b47cf5c5558"
 dependencies = [
  "regex-automata 0.1.10",
-]
-
-[[package]]
-name = "mathml_svg"
-version = "0.1.0"
-dependencies = [
- "console_error_panic_hook",
- "wasm-bindgen",
- "web-sys",
- "xilem_web",
 ]
 
 [[package]]
@@ -2454,7 +2319,6 @@ dependencies = [
 [[package]]
 name = "parley"
 version = "0.2.0"
-source = "git+https://github.com/linebender/parley?rev=16b62518d467487ee15cb230fdb28530d89a8cf6#16b62518d467487ee15cb230fdb28530d89a8cf6"
 dependencies = [
  "accesskit",
  "fontique",
@@ -2477,7 +2341,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2ec061f435b573ff602b2c5690f1a5bfcf461327194654cfbfce4412b95cf2a1"
 dependencies = [
  "color",
- "kurbo 0.11.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "kurbo",
  "smallvec",
 ]
 
@@ -2750,17 +2614,6 @@ name = "raw-window-handle"
 version = "0.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "20675572f6f24e9e76ef639bc5552774ed45f1c30e2951e1e99c59888861c539"
-
-[[package]]
-name = "raw_dom_access"
-version = "0.1.0"
-dependencies = [
- "console_error_panic_hook",
- "console_log",
- "log",
- "web-sys",
- "xilem_web",
-]
 
 [[package]]
 name = "read-fonts"
@@ -3225,18 +3078,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "spawn_tasks"
-version = "0.0.0"
-dependencies = [
- "console_error_panic_hook",
- "console_log",
- "futures",
- "gloo-timers",
- "log",
- "xilem_web",
-]
-
-[[package]]
 name = "spin"
 version = "0.9.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3280,26 +3121,6 @@ name = "svg_fmt"
 version = "0.4.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ce5d813d71d82c4cbc1742135004e4a79fd870214c155443451c139c9470a0aa"
-
-[[package]]
-name = "svgdraw"
-version = "0.1.0"
-dependencies = [
- "console_error_panic_hook",
- "wasm-bindgen",
- "web-sys",
- "xilem_web",
-]
-
-[[package]]
-name = "svgtoy"
-version = "0.1.0"
-dependencies = [
- "console_error_panic_hook",
- "wasm-bindgen",
- "web-sys",
- "xilem_web",
-]
 
 [[package]]
 name = "swash"
@@ -3498,20 +3319,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1f3ccbac311fea05f86f61904b462b55fb3df8837a366dfc601a0161d0532f20"
 
 [[package]]
-name = "todomvc"
-version = "0.1.0"
-dependencies = [
- "console_error_panic_hook",
- "serde",
- "serde_json",
- "tracing",
- "tracing-wasm",
- "wasm-bindgen",
- "web-sys",
- "xilem_web",
-]
-
-[[package]]
 name = "tokio"
 version = "1.43.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3651,17 +3458,6 @@ dependencies = [
  "tracing-core",
  "tracing-subscriber",
  "tracy-client 0.18.0",
-]
-
-[[package]]
-name = "tracing-wasm"
-version = "0.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4575c663a174420fa2d78f4108ff68f65bf2fbb7dd89f33749b6e826b3626e07"
-dependencies = [
- "tracing",
- "tracing-subscriber",
- "wasm-bindgen",
 ]
 
 [[package]]
@@ -4522,8 +4318,6 @@ checksum = "589f6da84c646204747d1270a2a5661ea66ed1cced2631d546fdfb155959f9ec"
 [[package]]
 name = "winit"
 version = "0.30.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f5d74280aabb958072864bff6cfbcf9025cf8bfacdde5e32b5e12920ef703b0f"
 dependencies = [
  "ahash",
  "android-activity",
@@ -4663,7 +4457,7 @@ dependencies = [
 name = "xilem_core"
 version = "0.1.0"
 dependencies = [
- "kurbo 0.11.1 (git+https://github.com/linebender/kurbo?rev=237b333935973a1df6602fcda46a160cbd6b4589)",
+ "kurbo",
  "tracing",
 ]
 
