@@ -132,6 +132,8 @@ winit          	= {path="../winit"}
 dpi            	= {path="../winit/dpi"}
 accesskit      	= {path="../accesskit/common"}
 accesskit_winit	= {path="../accesskit/platforms/winit"}
+kurbo = {git="https://github.com/linebender/kurbo", rev="237b333935973a1df6602fcda46a160cbd6b4589"}
+#//new version adds PartialEq to Stroke
 
 [profile.ci]
 inherits = "dev"
