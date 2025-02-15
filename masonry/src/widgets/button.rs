@@ -3,11 +3,6 @@
 
 //! A button widget.
 
-// use crate::kurbo::StrokeOpts;
-// use crate::kurbo::StrokeOptLevel;
-use vello::kurbo::Shape;
-use crate::kurbo::Stroke;
-use crate::kurbo::Affine;
 use accesskit::{Node, Role};
 use smallvec::{smallvec, SmallVec};
 use tracing::{trace, trace_span, Span};
@@ -20,6 +15,7 @@ use crate::core::{
 };
 use crate::kurbo::{Insets, Size};
 use crate::theme;
+use crate::util::{fill_lin_gradient, stroke, UnitPoint};
 use crate::widgets::Label;
 
 // The minimum padding added to a button.
@@ -163,73 +159,38 @@ impl Widget for Button {
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
-        let _is_active = ctx.is_pointer_capture_target() && !ctx.is_disabled();
+        let is_active = ctx.is_pointer_capture_target() && !ctx.is_disabled();
         let is_hovered = ctx.is_hovered();
         let size = ctx.size();
-        let stroke_width = 1.0; //theme::BUTTON_BORDER_WIDTH;
+        let stroke_width = theme::BUTTON_BORDER_WIDTH;
 
         let rounded_rect = size
             .to_rect()
-            .inset(-stroke_width / 2.0);
-            // .inset(-stroke_width / 2.0)
-            // .to_rounded_rect(0.);
-            // .to_rounded_rect(theme::BUTTON_BORDER_RADIUS);
+            .inset(-stroke_width / 2.0)
+            .to_rounded_rect(theme::BUTTON_BORDER_RADIUS);
 
-        // let bg_gradient = if ctx.is_disabled() {
-            // [theme::DISABLED_BUTTON_LIGHT, theme::DISABLED_BUTTON_DARK]
-        // } else if is_active {
-            // [theme::BUTTON_DARK, theme::BUTTON_LIGHT]
-        // } else {
-            // [crate::peniko::Color::from_rgb8(0xe1,0xe1,0xe1), crate::peniko::Color::from_rgb8(0xe1,0xe1,0xe1)]
-        // };
-        // let bg_gradient = [crate::peniko::Color::from_rgb8(0x00,0x00,0x00)
-          // ,                crate::peniko::Color::from_rgb8(0x00,0x00,0x00)];
-        let _bg_gradient = crate::peniko::Color::from_rgb8(0x00,0x00,0x00);
-
-        let border_color = if is_hovered && !ctx.is_disabled() {
-            crate::peniko::Color::from_rgb8(0x00,0x78,0xd7)
+        let bg_gradient = if ctx.is_disabled() {
+            [theme::DISABLED_BUTTON_LIGHT, theme::DISABLED_BUTTON_DARK]
+        } else if is_active {
+            [theme::BUTTON_DARK, theme::BUTTON_LIGHT]
         } else {
-            crate::peniko::Color::from_rgb8(0x00,0x78,0xd7)
+            [theme::BUTTON_LIGHT, theme::BUTTON_DARK]
         };
 
-        // let opts = StrokeOpts::default().opt_level(StrokeOptLevel::Optimized);
-        // stroke(scene, &rounded_rect, border_color, stroke_width);
-        // let buf = [1, 2, 3, 4, 5];
-        // let small_vec: SmallVec<_> = SmallVec::from_buf(buf);
-        let strk = Stroke::new(stroke_width).with_dashes(5.,[1.,2.,3.,4.]);
-        scene.stroke(
-            &strk,
-            // &Stroke::new(stroke_width),
-            Affine::IDENTITY,
-            border_color,
-            Some(Affine::IDENTITY),
+        let border_color = if is_hovered && !ctx.is_disabled() {
+            theme::BORDER_LIGHT
+        } else {
+            theme::BORDER_DARK
+        };
+
+        stroke(scene, &rounded_rect, border_color, stroke_width);
+        fill_lin_gradient(
+            scene,
             &rounded_rect,
+            bg_gradient,
+            UnitPoint::TOP,
+            UnitPoint::BOTTOM,
         );
-        // vello
-        // 1
-        // pub fn stroke<'b>(
-        //     &mut self,
-        //     style: &Stroke,
-        //     transform: Affine,
-        //     brush: impl Into<BrushRef<'b>>,
-        //     brush_transform: Option<Affine>,
-        //     shape: &impl Shape,
-        // )
-
-        let path = rounded_rect;
-        let _rect = path.bounding_box();
-        // let brush = Gradient::new_linear(UnitPoint::TOP.resolve(rect), UnitPoint::BOTTOM.resolve(rect)).with_stops(stops);
-        let brush = vello::peniko::Brush::Solid(crate::peniko::Color::from_rgb8(0xee,0xee,0xee));
-        scene.fill(vello::peniko::Fill::NonZero, Affine::IDENTITY, &brush, None, &path);
-        // scene.fill(vello::peniko::Fill::EvenOdd , Affine::IDENTITY, &brush, None, &path);
-
-        // fill_lin_gradient(
-        //     scene,
-        //     &rounded_rect,
-        //     bg_gradient,
-        //     UnitPoint::TOP,
-        //     UnitPoint::BOTTOM,
-        // );
     }
 
     fn accessibility_role(&self) -> Role {
