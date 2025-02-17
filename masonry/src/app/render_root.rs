@@ -149,6 +149,7 @@ pub(crate) struct RenderRootState {
     /// Pass tracing configuration, used to skip tracing to limit overhead.
     pub(crate) trace: PassTracing,
     pub(crate) inspector_state: InspectorState,
+    pub(crate) scale_factor: f64,
 }
 
 pub(crate) struct MutateCallback {
@@ -292,6 +293,7 @@ impl RenderRoot {
                     is_picking_widget: false,
                     hovered_widget: None,
                 },
+                scale_factor,
             },
             widget_arena: WidgetArena {
                 widgets: TreeArena::new(),
@@ -341,6 +343,7 @@ impl RenderRoot {
         match event {
             WindowEvent::Rescale(scale_factor) => {
                 self.scale_factor = scale_factor;
+                self.global_state.scale_factor = scale_factor;
                 self.request_render_all();
                 Handled::Yes
             }
