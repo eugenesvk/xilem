@@ -271,6 +271,35 @@ pub(crate) fn run_on_text_event_pass(root: &mut RenderRoot, event: &TextEvent) -
     );
 
     if let TextEvent::Keyboard(key) = event {
+        // https://docs.rs/masonry_winit/latest/masonry_winit/core/struct.KeyboardEvent.html
+        println!("state={:?} key={} code={} loc={:?} mod={:?} rep={} compos={}",
+            key.state, //KeyState
+            key.key, //Key
+            key.code, //Code
+            key.location, //Location
+            key.modifiers, //Modifiers
+            key.repeat, //bool
+            key.is_composing, //bool
+            );
+    // state	key  	code      	loc     	mod             	rep  	compos
+    // ‹⇧1  	     	          	        	                	     	.
+    // ↓    	Shift	ShiftLeft 	Left    	Modifiers(SHIFT)	false	false
+    // ↓    	!    	Digit1    	Standard	Modifiers(SHIFT)	false	false
+    // ↑    	!    	Digit1    	Standard	Modifiers(SHIFT)	false	false
+    // ↑    	Shift	ShiftLeft 	Left    	Modifiers(0x0)  	false	false
+    // ⇧›1  	     	          	        	                	     	.
+    // ↓    	Shift	ShiftRight	Right   	Modifiers(SHIFT)	false	false
+    // ↓    	!    	Digit1    	Standard	Modifiers(SHIFT)	false	false
+    // ↑    	!    	Digit1    	Standard	Modifiers(SHIFT)	false	false
+    // ↑    	Shift	ShiftRight	Right   	Modifiers(0x0)  	false	false
+    //‹⇧›1  	     	          	        	                	     	.
+    // ↓    	Shift	ShiftLeft 	Left    	Modifiers(SHIFT)	false	false
+    // ↓    	Shift	ShiftRight	Right   	Modifiers(SHIFT)	true 	false
+    // ↓    	!    	Digit1    	Standard	Modifiers(SHIFT)	false	false
+    // ↑    	!    	Digit1    	Standard	Modifiers(SHIFT)	false	false
+    // ↑    	Shift	ShiftRight	Right   	Modifiers(0x0)  	false	false
+    // ✗ repeat on shift› is WRONG, it's a different key
+    // ✗ NO side-aware modifiers, wasting thumb key
         // Handle Tab focus
         if key.key == Key::Named(NamedKey::Tab)
             && key.state == KeyState::Down
